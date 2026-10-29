@@ -1,0 +1,158 @@
+/* =========================================================
+   DESIGN TOKENS
+   Light is the default. Dark applies when:
+     - the user picks Dark (html[data-theme="dark"]), or
+     - the user picks System (no attribute) and the OS is dark.
+   js/utils/theme.js manages the data-theme attribute.
+========================================================= */
+:root{
+  color-scheme:light;
+  /* --- Canvas --- */
+  --bg:#FFFFFF;
+  --surface:#FFFFFF;
+  --surface-sunken:#F0F3F5;
+
+  /* --- Ink (text) --- */
+  --ink:#12232E;            /* 16.1:1 on white */
+  --ink-muted:#4A5B66;      /* 7.1:1 on surface */
+  --ink-faint:#5A6D7B;      /* 5.4:1 on white, 4.8:1 on sunken */
+
+  /* --- Lines --- */
+  --line:#D5DDE3;
+  --line-strong:#C4D0D9;
+  --input-border:#7C8E9B;   /* form outlines, 3.4:1 on surface */
+
+  /* --- Primary --- */
+  --primary:#0F6E86;        /* fills; white text 5.8:1 */
+  --primary-dark:#0A4F61;   /* strong fills, top bar; white text 9.1:1 */
+  --primary-tint:#E8F4F7;
+  --primary-ink:#0A4F61;    /* primary-coloured TEXT and icons */
+  --on-primary:#FFFFFF;
+
+  /* --- Clinical status: text colour / solid fill (white text) / tint --- */
+  --good:#247545;   --good-solid:#247545;  --good-tint:#EBF6EF;
+  --warn:#9A5F00;   --warn-solid:#9A5F00;  --warn-tint:#FFF6E6;
+  --alert:#B3362B;  --alert-solid:#B3362B; --alert-tint:#FDF0EE;
+  --alert-ink:#7A2E1E;                     /* body text inside alert banners */
+  --alert-line:rgba(179,54,43,0.16);
+  --info:#5544A3;   --info-tint:#F0EDF9;
+
+  /* --- Chrome --- */
+  --surface-raised:#FFFFFF;  /* selected segment, raised controls */
+  --sheet-bg:#FFFFFF;        /* popups and bottom sheets */
+  --sheet-border:transparent;
+  --topbar-bg:#0A4F61;
+  --brand-grad-end:#0A4F61;
+  --login-grad-end:#07323E;
+  --backdrop:rgba(16,26,24,0.42);
+  --toast-bg:#12232E;
+  --toast-ink:#FFFFFF;
+  --fab-shadow:0 10px 22px rgba(10,79,97,0.38);
+  --shadow-card:0 1px 2px rgba(18,35,46,0.06), 0 1px 0 rgba(18,35,46,0.04);
+  --shadow-pop:0 12px 32px rgba(18,35,46,0.18);
+
+  --radius-s:8px;
+  --radius-m:14px;
+  --radius-l:20px;
+--font-head:'Source Serif 4', Georgia, serif;
+  --font-body:'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:'IBM Plex Mono', 'SF Mono', monospace;
+--nav-h:64px;
+  --top-h:56px;
+}
+
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  /* --- Canvas --- */
+  --bg:#000000;
+  --surface:#10181C;
+  --surface-sunken:#070C0E;
+
+  /* --- Ink (text) --- */
+  --ink:#E6EEF2;            /* 15:1+ on surface and black */
+  --ink-muted:#A9BAC4;      /* 8.1:1 on surface */
+  --ink-faint:#8CA0AD;      /* 6.0:1 on surface */
+
+  /* --- Lines --- */
+  --line:#222F36;
+  --line-strong:#3A4C57;
+  --input-border:#667A88;   /* 3.6:1 on surface */
+
+  /* --- Primary --- */
+  --primary:#1C7C95;        /* white text 4.8:1 */
+  --primary-dark:#0F5C72;   /* white text 7.5:1 */
+  --primary-tint:#12303A;
+  --primary-ink:#6CC7DD;    /* 8.4:1 on surface */
+  --on-primary:#FFFFFF;
+
+  /* --- Clinical status --- */
+  --good:#5CC48A;   --good-solid:#1F7A47;  --good-tint:#12301F;
+  --warn:#F0B44C;   --warn-solid:#9A5F00;  --warn-tint:#33260A;
+  --alert:#FF8D80;  --alert-solid:#B3362B; --alert-tint:#3A1714;
+  --alert-ink:#FFC2BA;
+  --alert-line:rgba(255,141,128,0.22);
+  --info:#A89BF0;   --info-tint:#221D3F;
+
+  /* --- Chrome --- */
+  --surface-raised:#223843;  /* selected segment, raised controls */
+  --sheet-bg:#141F25;        /* popups lift off the page */
+  --sheet-border:#3A4C57;
+  --topbar-bg:#0B3F4E;
+  --brand-grad-end:#0A3E4E;
+  --login-grad-end:#06161B;
+  --backdrop:rgba(0,0,0,0.62);
+  --toast-bg:#2A3B45;
+  --toast-ink:#E6EEF2;
+  --fab-shadow:0 10px 22px rgba(0,0,0,0.5);
+  --shadow-card:0 1px 2px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.02);
+  --shadow-pop:0 12px 32px rgba(0,0,0,0.55);
+}
+
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+  /* --- Canvas --- */
+  --bg:#000000;
+  --surface:#10181C;
+  --surface-sunken:#070C0E;
+
+  /* --- Ink (text) --- */
+  --ink:#E6EEF2;            /* 15:1+ on surface and black */
+  --ink-muted:#A9BAC4;      /* 8.1:1 on surface */
+  --ink-faint:#8CA0AD;      /* 6.0:1 on surface */
+
+  /* --- Lines --- */
+  --line:#222F36;
+  --line-strong:#3A4C57;
+  --input-border:#667A88;   /* 3.6:1 on surface */
+
+  /* --- Primary --- */
+  --primary:#1C7C95;        /* white text 4.8:1 */
+  --primary-dark:#0F5C72;   /* white text 7.5:1 */
+  --primary-tint:#12303A;
+  --primary-ink:#6CC7DD;    /* 8.4:1 on surface */
+  --on-primary:#FFFFFF;
+
+  /* --- Clinical status --- */
+  --good:#5CC48A;   --good-solid:#1F7A47;  --good-tint:#12301F;
+  --warn:#F0B44C;   --warn-solid:#9A5F00;  --warn-tint:#33260A;
+  --alert:#FF8D80;  --alert-solid:#B3362B; --alert-tint:#3A1714;
+  --alert-ink:#FFC2BA;
+  --alert-line:rgba(255,141,128,0.22);
+  --info:#A89BF0;   --info-tint:#221D3F;
+
+  /* --- Chrome --- */
+  --surface-raised:#223843;  /* selected segment, raised controls */
+  --sheet-bg:#141F25;        /* popups lift off the page */
+  --sheet-border:#3A4C57;
+  --topbar-bg:#0B3F4E;
+  --brand-grad-end:#0A3E4E;
+  --login-grad-end:#06161B;
+  --backdrop:rgba(0,0,0,0.62);
+  --toast-bg:#2A3B45;
+  --toast-ink:#E6EEF2;
+  --fab-shadow:0 10px 22px rgba(0,0,0,0.5);
+  --shadow-card:0 1px 2px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.02);
+  --shadow-pop:0 12px 32px rgba(0,0,0,0.55);
+  }
+}

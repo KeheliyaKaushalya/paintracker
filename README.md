@@ -1,15 +1,10 @@
-# DP M&R: pain management ward round record
+DP M&R: pain management ward round record
 
 A phone-first web app for pain-management ward rounds: ward board, patient pages, pain scores
 with trend chart, vitals, medications, alerts, corrections with history, offline-safe saving,
 light/dark mode, installable on a phone. Built with React, TypeScript, Vite and Supabase.
 
-> **Use FAKE patients only** until your hospital has approved this system and you have finished
-> `docs/SECURITY.md`. This is not a certified medical device.
-
-## Start here
-
-1. Read **`docs/SETUP.md`** and follow it top to bottom (about 60-90 minutes the first time).
+1. Read **`docs/SETUP.md`** and follow it top to bottom
 2. Quick version, once Supabase is set up:
 
 ```bash
@@ -18,7 +13,7 @@ cp .env.example .env.local     # then fill in the two values
 npm run dev                    # http://localhost:5173
 ```
 
-## Commands
+Commands
 
 | Command | What it does |
 |---|---|
@@ -31,7 +26,7 @@ npm run dev                    # http://localhost:5173
 
 First time for browser tests: `npx playwright install`.
 
-## What is in the folders
+What is in the folders
 
 ```
 supabase/migrations/   7 SQL files that build the database and its security rules (run in order)
@@ -46,7 +41,7 @@ public/                icons and security headers (_headers)
 docs/                  SETUP.md, SECURITY.md, DECISIONS.md
 ```
 
-## Known limits (be aware)
+Known limits
 
 - Only **rounds** can be saved while offline. Adding or editing a patient needs a connection.
 - Creating or editing a patient is several requests, not one transaction. If a later step fails
@@ -56,6 +51,4 @@ docs/                  SETUP.md, SECURITY.md, DECISIONS.md
 - Roles (nurse / resident / consultant) are labels for now. Only **admin** has extra powers.
 - The board loads every active patient and their rounds in one go. Fine for tens of patients;
   it would need paging for hundreds.
-- No push notifications or fingerprint login (a native wrapper such as Capacitor could add them).
-- The browser tests were run on Chromium (Pixel 7 screen). The iPhone/WebKit variant is included
-  but was not run by the author.
+- No push notifications or fingerprint login

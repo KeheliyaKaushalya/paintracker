@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DP M&amp;R</string>
+    <string name="title_activity_main">DP M&amp;R</string>
+    <string name="package_name">com.keheliya.dpmr</string>
+    <string name="custom_url_scheme">com.keheliya.dpmr</string>
+</resources>

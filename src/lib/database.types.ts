@@ -77,6 +77,8 @@ type RoundRow = {
   session: string | null
   pain_rest: number | null
   pain_move: number | null
+  pain_cough: number | null
+  pain_physio: number | null
   rr: number | null
   spo2: number | null
   hr: number | null

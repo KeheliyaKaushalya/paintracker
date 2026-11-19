@@ -14,6 +14,10 @@ export interface RoundFormValues {
   session: string
   pain_rest: number | null
   pain_move: number | null
+  pain_cough: number | null
+  pain_physio: number | null
+  use_cough: boolean // true = this activity was assessed
+  use_physio: boolean
   rr: string
   spo2: string
   hr: string
@@ -51,6 +55,8 @@ const roundSchema = z
     session: z.enum(SESSIONS).nullable(),
     pain_rest: rangeInt('Rest pain', 0, 10),
     pain_move: rangeInt('Movement pain', 0, 10),
+    pain_cough: rangeInt('Coughing pain', 0, 10),
+    pain_physio: rangeInt('Physiotherapy pain', 0, 10),
     rr: rangeInt('Respiratory rate', 0, 80),
     spo2: rangeInt('SpO2', 0, 100),
     hr: rangeInt('Heart rate', 0, 300),
@@ -83,6 +89,8 @@ export function buildRoundInsert(f: RoundFormValues, ctx: RoundContext): BuildRe
   const bpText = f.bp.trim()
   const bp = bpText ? parseBp(bpText) : null
   if (bpText && !bp) errors.bp = 'Enter blood pressure like 120/80'
+  if (f.kind === 'pain' && f.use_cough && f.pain_cough == null) errors.pain_cough = 'Choose a coughing pain score'
+  if (f.kind === 'pain' && f.use_physio && f.pain_physio == null) errors.pain_physio = 'Choose a physiotherapy pain score'
 
   const pain = f.kind === 'pain'
   const candidate = {
@@ -93,6 +101,8 @@ export function buildRoundInsert(f: RoundFormValues, ctx: RoundContext): BuildRe
     session: pain || f.session ? (f.session || null) : null,
     pain_rest: pain ? f.pain_rest : null,
     pain_move: pain ? f.pain_move : null,
+    pain_cough: pain && f.use_cough ? f.pain_cough : null,
+    pain_physio: pain && f.use_physio ? f.pain_physio : null,
     rr: pain ? toInt(f.rr) : null,
     spo2: pain ? toInt(f.spo2) : null,
     hr: pain ? toInt(f.hr) : null,

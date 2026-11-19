@@ -181,6 +181,20 @@ begin
     format($q$insert into public.patient_meds (patient_id, drug, route, dose, freq) values ('%s','Tramadol','Oral','50 mg','Daily')$q$, pid)) = 'ok',
     'the Daily frequency is accepted');
 
+  -- ---- 009: cough and physio ----
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id,
+    format($q$insert into public.rounds (patient_id, kind, round_date, pain_rest, pain_move, pain_cough, pain_physio, created_by)
+              values ('%s','pain', current_date, 3, 4, 5, 6, '%s')$q$, pid, nurse_id)) = 'ok',
+    'cough and physiotherapy scores can be saved');
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id,
+    format($q$insert into public.rounds (patient_id, kind, round_date, pain_rest, pain_move, pain_cough, created_by)
+              values ('%s','pain', current_date, 3, 4, 11, '%s')$q$, pid, nurse_id)) like 'error%',
+    'a cough score above 10 is rejected');
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id,
+    format($q$insert into public.rounds (patient_id, kind, round_date, note, pain_cough, created_by)
+              values ('%s','ward', current_date, 'note', 3, '%s')$q$, pid, nurse_id)) like 'error%',
+    'a ward round cannot hold pain scores');
+
   -- ---- roles, approval and the audit log ----
   perform pg_temp.run_as(nurse_id, format($q$update public.profiles set role = 'admin', active = true where id = '%s'$q$, nurse_id));
   perform pg_temp.check_that((select role from public.profiles where id = nurse_id) = 'nurse',

@@ -7,6 +7,7 @@ const ctx = {
 }
 const painForm = (over: Partial<RoundFormValues> = {}): RoundFormValues => ({
   kind: 'pain', round_date: '2026-10-20', round_time: '08:30', session: 'Morning', pain_rest: 3, pain_move: 5,
+  pain_cough: null, pain_physio: null, use_cough: false, use_physio: false,
   rr: '', spo2: '', hr: '', bp: '', gcs: '', mobilization: '', tags: [], note: '', ...over,
 })
 
@@ -44,6 +45,16 @@ describe('pain round form', () => {
   it('GCS below 3 is impossible', () => {
     expect(buildRoundInsert(painForm({ gcs: '2' }), ctx).ok).toBe(false)
   })
+  it('saves cough and physio scores only when they are switched on', () => {
+    const r = buildRoundInsert(painForm({ use_cough: true, pain_cough: 6, use_physio: false, pain_physio: 9 }), ctx)
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.value).toMatchObject({ pain_cough: 6, pain_physio: null })
+  })
+  it('asks for a score when cough is switched on but not scored', () => {
+    const r = buildRoundInsert(painForm({ use_cough: true, pain_cough: null }), ctx)
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.errors.pain_cough).toMatch(/cough/i)
+  })
 })
 
 describe('ward round form', () => {
@@ -52,6 +63,11 @@ describe('ward round form', () => {
     const r = buildRoundInsert(painForm({ kind: 'ward', note: 'Comfortable', spo2: '97', pain_rest: 5 }), ctx)
     expect(r.ok).toBe(true)
     if (r.ok) expect(r.value).toMatchObject({ kind: 'ward', pain_rest: null, spo2: null, note: 'Comfortable' })
+  })
+  it('never stores cough or physio on a ward round', () => {
+    const r = buildRoundInsert(painForm({ kind: 'ward', note: 'ok', use_cough: true, pain_cough: 5 }), ctx)
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.value).toMatchObject({ pain_cough: null, pain_physio: null })
   })
 })
 

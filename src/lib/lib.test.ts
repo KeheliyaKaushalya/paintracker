@@ -10,7 +10,7 @@ import { EPIDURAL_LEVELS, MED_FREQS } from './constants'
 
 const round = (over: Partial<Round>): Round => ({
   id: 'r', patient_id: 'p', kind: 'pain', round_date: '2026-10-20', round_time: '08:00:00', session: 'Morning',
-  pain_rest: 2, pain_move: 4, rr: null, spo2: null, hr: null, bp_sys: null, bp_dia: null, gcs: null,
+  pain_rest: 2, pain_move: 4, pain_cough: null, pain_physio: null, rr: null, spo2: null, hr: null, bp_sys: null, bp_dia: null, gcs: null,
   mobilization: null, tags: [], note: null, amended_of: null, created_by: 'u', created_at: '2026-10-20T02:00:00Z', ...over,
 })
 

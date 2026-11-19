@@ -17,12 +17,28 @@ import { buildRoundInsert, type RoundFormValues } from './schemas'
 
 const defaultSession = () => (new Date().getHours() < 12 ? 'Morning' : 'Evening')
 
+function OptionalPain({ id, label, on, value, onToggle, onChange, error }: {
+  id: string; label: string; on: boolean; value: number | null
+  onToggle: (on: boolean) => void; onChange: (n: number) => void; error?: string
+}) {
+  return (
+    <div className="stack-s">
+      <button type="button" className={`chip ${on ? 'active' : ''}`} aria-pressed={on} style={{ alignSelf: 'flex-start' }} onClick={() => onToggle(!on)}>
+        {on ? '✓ ' : '+ '}{label}
+      </button>
+      {on && <PainScale id={id} label={label} value={value} onChange={onChange} error={error} />}
+    </div>
+  )
+}
+
 function initialValues(kind: 'pain' | 'ward', from?: Round): RoundFormValues {
   if (from) {
     const n = (v: number | null) => (v == null ? '' : String(v))
     return {
       kind: from.kind === 'ward' ? 'ward' : 'pain', round_date: from.round_date, round_time: hhmm(from.round_time), session: from.session ?? '',
       pain_rest: from.pain_rest, pain_move: from.pain_move, rr: n(from.rr), spo2: n(from.spo2), hr: n(from.hr),
+      pain_cough: from.pain_cough, pain_physio: from.pain_physio,
+      use_cough: from.pain_cough != null, use_physio: from.pain_physio != null,
       bp: formatBp(from.bp_sys, from.bp_dia), gcs: n(from.gcs), mobilization: from.mobilization ?? '',
       tags: from.tags, note: from.note ?? '',
     }
@@ -30,6 +46,7 @@ function initialValues(kind: 'pain' | 'ward', from?: Round): RoundFormValues {
   return {
     kind, round_date: todayISO(), round_time: nowHHMM(), session: defaultSession(), pain_rest: null, pain_move: null,
     rr: '', spo2: '', hr: '', bp: '', gcs: '', mobilization: '', tags: [], note: '',
+    pain_cough: null, pain_physio: null, use_cough: false, use_physio: false,
   }
 }
 
@@ -123,6 +140,12 @@ function RoundForm({ patient, amend, kind }: { patient: PatientFull; amend?: Rou
           <div className="card stack">
             <PainScale id="rest" label="Rest pain" value={f.pain_rest} onChange={(n) => set('pain_rest', n)} error={err('pain_rest')} />
             <PainScale id="move" label="Movement pain" value={f.pain_move} onChange={(n) => set('pain_move', n)} error={err('pain_move')} />
+            <OptionalPain id="cough" label="Coughing pain" on={f.use_cough} value={f.pain_cough} error={err('pain_cough')}
+              onToggle={(on) => setF((cur) => ({ ...cur, use_cough: on, pain_cough: on ? cur.pain_cough : null }))}
+              onChange={(n) => set('pain_cough', n)} />
+            <OptionalPain id="physio" label="Physiotherapy pain" on={f.use_physio} value={f.pain_physio} error={err('pain_physio')}
+              onToggle={(on) => setF((cur) => ({ ...cur, use_physio: on, pain_physio: on ? cur.pain_physio : null }))}
+              onChange={(n) => set('pain_physio', n)} />
           </div>
 
           <div className="card stack">

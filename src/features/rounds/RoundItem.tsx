@@ -43,6 +43,8 @@ export function RoundItem({ round: r, all, nameOf, canAmend }: { round: Round; a
         <div className="round-scores">
           <Score label="Rest" value={r.pain_rest} />
           <Score label="Movement" value={r.pain_move} />
+          <Score label="Cough" value={r.pain_cough} />
+          <Score label="Physio" value={r.pain_physio} />
         </div>
       )}
       {vitals.length > 0 && <p className="mono muted" style={{ fontSize: 13 }}>{vitals.join(' · ')}</p>}
@@ -64,7 +66,7 @@ export function RoundItem({ round: r, all, nameOf, canAmend }: { round: Round; a
           <summary>Earlier version{old.length > 1 ? 's' : ''} ({old.length})</summary>
           {old.map((o) => (
             <p key={o.id} className="mono" style={{ marginTop: 4 }}>
-              {fmtDate(o.round_date)} {hhmm(o.round_time)} · {o.kind === 'pain' ? `Rest ${o.pain_rest} / Move ${o.pain_move}` : 'ward round'}{o.note ? ` · ${o.note}` : ''} · {nameOf(o.created_by)}
+              {fmtDate(o.round_date)} {hhmm(o.round_time)} · {o.kind === 'pain' ? `Rest ${o.pain_rest} / Move ${o.pain_move}${o.pain_cough != null ? ` / Cough ${o.pain_cough}` : ''}${o.pain_physio != null ? ` / Physio ${o.pain_physio}` : ''}` : 'ward round'}
             </p>
           ))}
         </details>

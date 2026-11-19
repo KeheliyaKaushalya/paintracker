@@ -1,11 +1,3 @@
--- =====================================================================
--- SECURITY TEST for the PainTracker database.
--- Run in the Supabase SQL Editor (or psql) AFTER migrations 001-006.
--- It creates 3 temporary fake users and fake data, checks every rule,
--- prints PASS/FAIL notices, then ROLLS BACK so nothing is left behind.
--- Any FAIL raises an error and stops. If you reach the final "ALL
--- SECURITY TESTS PASSED" notice, the rules work.
--- =====================================================================
 begin;
 
 create function pg_temp.run_as(uid uuid, stmt text) returns text language plpgsql as $$
@@ -56,6 +48,7 @@ declare
   r          text;
   n          bigint;
   who        uuid;
+  base_rounds bigint;
 begin
   -- ---- set-up (as the database owner) ----
   insert into auth.users (id, email) values
@@ -67,7 +60,7 @@ begin
   update public.profiles set role = 'nurse', active = true where id = nurse_id;
   insert into public.patients (id, bht, full_name, age, sex, ward, created_by)
     values (pid, 'TEST/0001', 'Test Patient', 61, 'M', '7A', admin_id);
-
+    select count(*) into base_rounds from public.rounds;
   -- ---- logged-out visitor ----
   perform pg_temp.check_that(pg_temp.count_as(null, 'select count(*) from public.patients') = -1,
     'logged-out visitor cannot read patients');
@@ -88,8 +81,9 @@ begin
     'unapproved user can only see their own profile');
 
   -- ---- approved nurse: patients ----
-  perform pg_temp.check_that(pg_temp.count_as(nurse_id, 'select count(*) from public.patients') = 1,
-    'approved nurse can read patients');
+  perform pg_temp.check_that(
+    pg_temp.count_as(nurse_id, 'select count(*) from public.patients') = (select count(*) from public.patients),
+    'approved nurse can read ALL patients');
   perform pg_temp.check_that(pg_temp.run_as(nurse_id,
     format($q$insert into public.patients (bht, full_name, ward, created_by) values ('N/1','Nurse Patient','7A','%s')$q$, nurse_id)) = 'ok',
     'nurse can add a patient under their own name');
@@ -159,7 +153,7 @@ begin
     format($q$insert into public.rounds (patient_id, kind, round_date, pain_rest, pain_move, amended_of, created_by)
               values ('%s','pain', current_date, 4, 4, '%s', '%s')$q$, pid, rid, nurse_id)) = 'ok',
     'a correction is saved as a NEW round pointing at the old one');
-  perform pg_temp.check_that(pg_temp.count_as(nurse_id, 'select count(*) from public.rounds') = 3,
+  perform pg_temp.check_that(pg_temp.count_as(nurse_id, 'select count(*) from public.rounds') = base_rounds + 3,
     'the original round is still there after the correction');
 
   -- ---- medications and alerts ----
@@ -181,6 +175,11 @@ begin
     'alerts cannot be edited');
   perform pg_temp.check_that(pg_temp.run_as(nurse_id, $q$delete from public.patient_alerts$q$) like 'error%',
     'alerts cannot be deleted');
+    
+  -- ---- 008: Daily frequency ----
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id,
+    format($q$insert into public.patient_meds (patient_id, drug, route, dose, freq) values ('%s','Tramadol','Oral','50 mg','Daily')$q$, pid)) = 'ok',
+    'the Daily frequency is accepted');
 
   -- ---- roles, approval and the audit log ----
   perform pg_temp.run_as(nurse_id, format($q$update public.profiles set role = 'admin', active = true where id = '%s'$q$, nurse_id));

@@ -87,4 +87,8 @@ describe('patient form', () => {
   it('rejects an unknown drug', () => {
     expect(buildPatient({ ...ok(), meds: [{ ...newMedRow(), drug: 'Aspirin' }] }).ok).toBe(false)
   })
+    it('accepts the Daily frequency', () => {
+    const r = buildPatient({ ...ok(), meds: [{ ...newMedRow(), freq: 'Daily' }] })
+    expect(r.ok).toBe(true)
+  })
 })

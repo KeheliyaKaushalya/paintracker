@@ -6,6 +6,7 @@ import { painLevel, painWord } from './pain'
 import { effectiveRounds, latestPainRound, previousVersions } from './rounds'
 import type { Round } from './models'
 import { vitalWarnings } from './vitals'
+import { EPIDURAL_LEVELS, MED_FREQS } from './constants'
 
 const round = (over: Partial<Round>): Round => ({
   id: 'r', patient_id: 'p', kind: 'pain', round_date: '2026-10-20', round_time: '08:00:00', session: 'Morning',
@@ -101,5 +102,13 @@ describe('amended rounds', () => {
   it('finds the latest pain round and ignores ward rounds', () => {
     const ward = round({ id: 'w', kind: 'ward', round_date: '2026-10-21', pain_rest: null, pain_move: null })
     expect(latestPainRound([a, b, c, other, ward])?.id).toBe('c')
+  })
+})
+
+describe('constants', () => {
+  it('offers Daily', () => expect(MED_FREQS).toContain('Daily'))
+  it('has no T1–T3 epidural levels but keeps T4-T5, T12-L1 and L5', () => {
+    expect(EPIDURAL_LEVELS.filter((l) => /^T[1-3](-|$)/.test(l))).toEqual([])
+    expect(EPIDURAL_LEVELS).toEqual(expect.arrayContaining(['T4-T5', 'T12-L1', 'L5']))
   })
 })

@@ -10,7 +10,7 @@ export const MED_DRUGS = [
   'Celecoxib (Cox-2)', 'Diclofenac (NSAID)', 'Other',
 ] as const
 export const MED_ROUTES = ['Oral', 'IV', 'IM', 'SC', 'PR', 'IT', 'Epidural'] as const
-export const MED_FREQS = ['Every 4h', 'Every 6h', 'Every 8h', 'Every 12h', 'Other'] as const
+export const MED_FREQS = ['Every 4h', 'Every 6h', 'Every 8h', 'Every 12h', 'Daily', 'Other'] as const
 export const MED_DOSINGS = ['single', 'loading'] as const
 export const SESSIONS = ['Morning', 'Evening'] as const
 export const MOBILIZATION = ['Mobilized', 'Not mobilized'] as const
@@ -22,9 +22,10 @@ export const ROLES = ['nurse', 'resident', 'consultant', 'admin'] as const
 
 /** Epidural level suggestions for the type-ahead list (free text is also allowed). */
 export const EPIDURAL_LEVELS: string[] = (() => {
+  // T1–T3 are not used for epidural insertion, so the list starts at T4.
   const single = [
-    ...Array.from({ length: 12 }, (_, i) => `T${i + 1}`),
-    ...Array.from({ length: 5 }, (_, i) => `L${i + 1}`),
+    ...Array.from({ length: 9 }, (_, i) => `T${i + 4}`), // T4 … T12
+    ...Array.from({ length: 5 }, (_, i) => `L${i + 1}`), // L1 … L5
   ]
   const pairs = single.slice(0, -1).map((l, i) => `${l}-${single[i + 1]}`)
   return [...pairs, ...single]

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
 
 export function Spinner({ label = 'Loading' }: { label?: string }) {
@@ -90,6 +90,42 @@ export function Segmented<T extends string>({ value, options, onChange, label }:
           {o.label}
         </button>
       ))}
+    </div>
+  )
+}
+
+/** A dialog with a text box for a reason. */
+export function PromptDialog(props: {
+  title: string
+  message: string
+  label: string
+  placeholder?: string
+  required?: boolean
+  confirmLabel: string
+  danger?: boolean
+  busy?: boolean
+  error?: string | null
+  onConfirm: (value: string) => void
+  onCancel: () => void
+}) {
+  const [value, setValue] = useState('')
+  const missing = props.required && !value.trim()
+  return (
+    <div className="dialog-backdrop" onClick={props.onCancel}>
+      <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="pd-t" aria-describedby="pd-m" onClick={(e) => e.stopPropagation()}>
+        <h2 id="pd-t">{props.title}</h2>
+        <p id="pd-m" className="muted">{props.message}</p>
+        <Field id="pd-input" label={props.label}>
+          <textarea id="pd-input" className="input" placeholder={props.placeholder} value={value} onChange={(e) => setValue(e.target.value)} />
+        </Field>
+        {props.error && <div className="error-box" role="alert">{props.error}</div>}
+        <div className="row" style={{ justifyContent: 'flex-end' }}>
+          <button className="btn btn-outline" onClick={props.onCancel} disabled={props.busy}>Cancel</button>
+          <button className={`btn ${props.danger ? 'btn-danger' : 'btn-primary'}`} onClick={() => props.onConfirm(value)} disabled={props.busy || missing}>
+            {props.busy ? 'Working…' : props.confirmLabel}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

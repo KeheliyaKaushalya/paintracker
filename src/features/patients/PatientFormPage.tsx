@@ -207,7 +207,17 @@ function PatientForm({ initial, patientId, existingMedIds }: { initial: PatientF
 
         <div className="stack-s">
           <span className="label">Medications</span>
-          {f.meds.map((m, i) => (
+          {f.meds.map((m, i) => {
+            if (existingMedIds.includes(m.id)) {
+              return (
+                <div className="med-card" key={m.id} data-testid="med-row">
+                  <strong>{m.drug}</strong>
+                  <span className="muted">{[m.route, m.dose, m.freq === 'Other' ? m.freq_custom : m.freq].filter(Boolean).join(' · ')}</span>
+                  <span className="hint">Saved medication. To change the dose or stop it, use the patient page.</span>
+                </div>
+              )
+            }
+            return (
             <div className="med-card" key={m.id} data-testid="med-row">
               <div className="row2">
                 <Select id={`d${m.id}`} label="Drug" value={m.drug} options={MED_DRUGS} onChange={(v) => setMed(m.id, { drug: v })} />
@@ -237,7 +247,8 @@ function PatientForm({ initial, patientId, existingMedIds }: { initial: PatientF
                 <Icon name="trash" />Remove medication
               </button>
             </div>
-          ))}
+          )
+        })}
           <button type="button" className="btn btn-outline" onClick={() => set('meds', [...f.meds, newMedRow()])}><Icon name="plus" />Add medication</button>
         </div>
       </Section>

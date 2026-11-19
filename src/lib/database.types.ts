@@ -58,6 +58,12 @@ type MedRow = {
   freq_custom: string | null
   dosing: string
   topup: string | null
+  status: string
+  started_at: string | null
+  started_by: string | null
+  ended_at: string | null
+  ended_by: string | null
+  end_reason: string | null
 }
 
 type AlertRow = {
@@ -93,6 +99,19 @@ type RoundRow = {
   created_at: string
 }
 
+type MedChangeRow = {
+  id: string
+  med_id: string
+  patient_id: string
+  from_dose: string | null
+  to_dose: string | null
+  from_freq: string | null
+  to_freq: string | null
+  reason: string | null
+  changed_by: string
+  changed_at: string
+}
+
 type AuditRow = {
   id: number
   at: string
@@ -125,6 +144,12 @@ export type Database = {
         Update: Partial<MedRow>
         Relationships: []
       }
+      patient_med_changes: {
+        Row: MedChangeRow
+        Insert: Partial<MedChangeRow> & Pick<MedChangeRow, 'med_id' | 'patient_id'>
+        Update: Partial<MedChangeRow>
+        Relationships: []
+      }
       patient_alerts: {
         Row: AlertRow
         Insert: Partial<AlertRow> & Pick<AlertRow, 'patient_id' | 'alert_text'>
@@ -145,7 +170,10 @@ export type Database = {
       }
     }
     Views: { [_ in never]: never }
-    Functions: { [_ in never]: never }
+    Functions: {
+      change_med_dose: { Args: { p_med: string; p_dose: string; p_freq: string; p_freq_custom: string; p_reason: string }; Returns: undefined }
+      end_med: { Args: { p_med: string; p_status: string; p_reason: string }; Returns: undefined }
+    }
     Enums: { app_role: 'nurse' | 'resident' | 'consultant' | 'admin' }
     CompositeTypes: { [_ in never]: never }
   }

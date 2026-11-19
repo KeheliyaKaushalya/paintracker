@@ -53,3 +53,10 @@ export function toUnixSeconds(date: string, time: string | null | undefined, ses
   d.setHours(h, m, 0, 0)
   return Math.floor(d.getTime() / 1000)
 }
+
+/** "2026-11-17T09:30:00Z" -> "17 Nov 2026, 15:00" in the device's local time. */
+export function fmtStamp(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return `${fmtDateLong(todayISO(d))}, ${nowHHMM(d)}`
+}

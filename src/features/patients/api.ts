@@ -1,6 +1,6 @@
 import { toError } from '../../lib/errors'
 import { todayISO } from '../../lib/dates'
-import type { PatientFull, Profile, Role, Round } from '../../lib/models'
+import type { MedChange, PatientFull, Profile, Role, Round } from '../../lib/models'
 import { supabase } from '../../lib/supabase'
 import type { PatientBuild } from './schemas'
 
@@ -65,20 +65,11 @@ export async function updatePatient(id: string, build: PatientBuild, existingMed
   if (error) throw toError(error)
 
   const warnings: string[] = []
-  // Save the current medications first; only then remove the ones that were taken out,
-  // so a failure part-way can never leave the patient with fewer medications than before.
-  if (build.meds.length > 0) {
-    const { error: e } = await supabase.from('patient_meds').upsert(build.meds.map((m) => ({ ...m, patient_id: id })), { onConflict: 'id' })
-    if (e) {
-      warnings.push('The patient was saved, but the medication list was not updated. Open Edit and check it.')
-      return { id, warnings }
-    }
-  }
-  const keep = new Set(build.meds.map((m) => m.id))
-  const removed = existingMedIds.filter((x) => !keep.has(x))
-  if (removed.length > 0) {
-    const { error: e } = await supabase.from('patient_meds').delete().in('id', removed)
-    if (e) warnings.push('Some removed medications are still listed. Open Edit and remove them again.')
+  const saved = new Set(existingMedIds)
+  const added = build.meds.filter((m) => !saved.has(m.id))
+  if (added.length > 0) {
+    const { error: e } = await supabase.from('patient_meds').insert(added.map((m) => ({ ...m, patient_id: id })))
+    if (e) warnings.push('The patient was saved, but the new medications were not. Open Edit and add them again.')
   }
   return { id, warnings }
 }
@@ -107,4 +98,20 @@ export async function fetchProfiles(): Promise<Profile[]> {
 export async function updateProfile(id: string, patch: { active?: boolean; role?: Role; full_name?: string }): Promise<void> {
   const { error } = await supabase.from('profiles').update(patch).eq('id', id)
   if (error) throw toError(error)
+}
+
+export async function changeMedDose(medId: string, dose: string, freq: string, freqCustom: string, reason: string): Promise<void> {
+  const { error } = await supabase.rpc('change_med_dose', { p_med: medId, p_dose: dose, p_freq: freq, p_freq_custom: freqCustom, p_reason: reason })
+  if (error) throw toError(error)
+}
+
+export async function endMed(medId: string, status: 'stopped' | 'removed', reason: string): Promise<void> {
+  const { error } = await supabase.rpc('end_med', { p_med: medId, p_status: status, p_reason: reason })
+  if (error) throw toError(error)
+}
+
+export async function fetchMedChanges(patientId: string): Promise<MedChange[]> {
+  const { data, error } = await supabase.from('patient_med_changes').select('*').eq('patient_id', patientId).order('changed_at', { ascending: false })
+  if (error) throw toError(error)
+  return (data ?? []) as MedChange[]
 }

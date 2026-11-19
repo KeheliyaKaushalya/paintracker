@@ -21,6 +21,7 @@ export function useRealtimeSync(enabled: boolean) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, refresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'patient_meds' }, refresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'patient_alerts' }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'patient_med_changes' }, refresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rounds' }, refresh)
       .subscribe()
     // Phones pause connections in the background: catch up when the app comes back.

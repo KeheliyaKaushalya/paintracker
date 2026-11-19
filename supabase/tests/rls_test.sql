@@ -48,9 +48,10 @@ declare
   r          text;
   n          bigint;
   who        uuid;
+  mid uuid;
   base_rounds bigint;
 begin
-  -- ---- set-up (as the database owner) ----
+  -- ---- 002:Set-up (as the database owner) ----
   insert into auth.users (id, email) values
     (admin_id, 'admin@test.local'), (nurse_id, 'nurse@test.local'), (pending_id, 'pending@test.local');
   perform pg_temp.check_that((select count(*) from public.profiles where id in (admin_id, nurse_id, pending_id)) = 3,
@@ -61,7 +62,8 @@ begin
   insert into public.patients (id, bht, full_name, age, sex, ward, created_by)
     values (pid, 'TEST/0001', 'Test Patient', 61, 'M', '7A', admin_id);
     select count(*) into base_rounds from public.rounds;
-  -- ---- logged-out visitor ----
+
+  -- ---- 003: Logged-out visitor ----
   perform pg_temp.check_that(pg_temp.count_as(null, 'select count(*) from public.patients') = -1,
     'logged-out visitor cannot read patients');
   perform pg_temp.check_that(pg_temp.run_as(null, $q$insert into public.patients (bht, full_name, ward) values ('X','X','X')$q$) like 'error%',
@@ -69,7 +71,7 @@ begin
   perform pg_temp.check_that(pg_temp.count_as(null, 'select count(*) from public.profiles') = -1,
     'logged-out visitor cannot read profiles');
 
-  -- ---- inactive (not yet approved) user ----
+  -- ---- 004: Inactive (not yet approved) user ----
   perform pg_temp.check_that(pg_temp.count_as(pending_id, 'select count(*) from public.patients') = 0,
     'unapproved user sees zero patients');
   perform pg_temp.check_that(pg_temp.count_as(pending_id, 'select count(*) from public.rounds') = 0,
@@ -80,7 +82,7 @@ begin
   perform pg_temp.check_that(pg_temp.count_as(pending_id, 'select count(*) from public.profiles') = 1,
     'unapproved user can only see their own profile');
 
-  -- ---- approved nurse: patients ----
+  -- ---- 005: Approved nurse: patients ----
   perform pg_temp.check_that(
     pg_temp.count_as(nurse_id, 'select count(*) from public.patients') = (select count(*) from public.patients),
     'approved nurse can read ALL patients');
@@ -111,7 +113,7 @@ begin
   perform pg_temp.check_that(pg_temp.run_as(nurse_id, format($q$update public.patients set category = 'Nonsense' where id = '%s'$q$, pid)) like 'error%',
     'unknown category is rejected');
 
-  -- ---- rounds ----
+  -- ---- 006: Rounds ----
   perform pg_temp.check_that(pg_temp.run_as(nurse_id,
     format($q$insert into public.rounds (id, patient_id, kind, round_date, session, pain_rest, pain_move, spo2, bp_sys, bp_dia, created_by)
               values ('%s','%s','pain', current_date, 'Morning', 3, 5, 97, 120, 80, '%s')$q$, rid, pid, nurse_id)) = 'ok',
@@ -156,15 +158,15 @@ begin
   perform pg_temp.check_that(pg_temp.count_as(nurse_id, 'select count(*) from public.rounds') = base_rounds + 3,
     'the original round is still there after the correction');
 
-  -- ---- medications and alerts ----
+  -- ---- 007: Medications and alerts ----
   perform pg_temp.check_that(pg_temp.run_as(nurse_id,
     format($q$insert into public.patient_meds (patient_id, drug, route, dose, freq) values ('%s','Paracetamol','IV','1 g','Every 6h')$q$, pid)) = 'ok',
     'nurse can add a medication');
   perform pg_temp.check_that(pg_temp.run_as(nurse_id,
     format($q$insert into public.patient_meds (patient_id, drug, route) values ('%s','Aspirin','IV')$q$, pid)) like 'error%',
     'unknown drug is rejected');
-  perform pg_temp.check_that(pg_temp.run_as(nurse_id, format($q$delete from public.patient_meds where patient_id = '%s'$q$, pid)) = 'ok',
-    'medications can be replaced when a patient is edited');
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id, format($q$delete from public.patient_meds where patient_id = '%s'$q$, pid)) like 'error%',
+    'medications cannot be deleted (they are stopped instead)');
   perform pg_temp.check_that(pg_temp.run_as(nurse_id,
     format($q$insert into public.patient_alerts (patient_id, alert_text, created_by) values ('%s','Do not remove catheter','%s')$q$, pid, nurse_id)) = 'ok',
     'nurse can add an alert');
@@ -194,6 +196,30 @@ begin
     format($q$insert into public.rounds (patient_id, kind, round_date, note, pain_cough, created_by)
               values ('%s','ward', current_date, 'note', 3, '%s')$q$, pid, nurse_id)) like 'error%',
     'a ward round cannot hold pain scores');
+
+  -- ---- 010: medication status and history ----
+  select id into mid from public.patient_meds where patient_id = pid and drug = 'Paracetamol' limit 1;
+  perform pg_temp.check_that((select status from public.patient_meds where id = mid) = 'active', 'a new medication starts active');
+  perform pg_temp.check_that((select started_by from public.patient_meds where id = mid) = nurse_id,
+    'who added a medication is recorded automatically');
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id,
+    format($q$select public.change_med_dose('%s','2 g','Every 8h','','Pain controlled')$q$, mid)) = 'ok', 'a nurse can change a dose');
+  perform pg_temp.check_that((select dose from public.patient_meds where id = mid) = '2 g', 'the dose changed');
+  perform pg_temp.check_that((select count(*) from public.patient_med_changes where med_id = mid) = 1,
+    'the dose change was recorded in the history');
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id,
+    format($q$select public.change_med_dose('%s','2 g','Every 8h','','x')$q$, mid)) like 'error%', 'an unchanged dose is rejected');
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id, 'delete from public.patient_med_changes') like 'error%',
+    'dose history cannot be deleted');
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id,
+    format($q$select public.end_med('%s','removed','')$q$, mid)) like 'error%', 'removing an entry needs a reason');
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id,
+    format($q$select public.end_med('%s','stopped','Pain controlled')$q$, mid)) = 'ok', 'a medication can be stopped');
+  perform pg_temp.check_that((select ended_by from public.patient_meds where id = mid) = nurse_id,
+    'who stopped a medication is recorded');
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id,
+    format($q$select public.change_med_dose('%s','5 g','Daily','','x')$q$, mid)) like 'error%',
+    'a stopped medication cannot be changed');
 
   -- ---- roles, approval and the audit log ----
   perform pg_temp.run_as(nurse_id, format($q$update public.profiles set role = 'admin', active = true where id = '%s'$q$, nurse_id));

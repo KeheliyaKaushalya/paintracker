@@ -5,6 +5,7 @@ import type { PatientFull } from '../../lib/models'
 import { painLevel, painWord } from '../../lib/pain'
 import { latestPainRound, latestRound } from '../../lib/rounds'
 import { isUrgent } from './filters'
+import { isActiveMed } from '../../lib/meds'
 
 function Tile({ label, value }: { label: string; value: number | null | undefined }) {
   if (value == null) {
@@ -25,8 +26,8 @@ export function PatientCard({ patient: p, nameOf }: { patient: PatientFull; name
   const last = latestRound(p.rounds)
   const alert = [...p.patient_alerts].sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0]
   const pod = computePOD(p.surgery_date)
-  const meds = [...p.patient_meds].sort((a, b) => a.sort_order - b.sort_order)
-
+  const meds = p.patient_meds.filter(isActiveMed).sort((a, b) => a.sort_order - b.sort_order)
+  
   return (
     <Link to={`/patients/${p.id}`} className="card pcard" aria-label={`${p.full_name}, ${p.ward}`}>
       <div className="pcard-top">

@@ -10,6 +10,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { RoundItem } from '../rounds/RoundItem'
 import { addAlert, dischargePatient, readmitPatient } from './api'
 import { useNameLookup, usePatient } from './hooks'
+import { MedSection } from './Medsection'
 
 const PainChart = lazy(() => import('../rounds/PainChart'))
 
@@ -46,7 +47,6 @@ export function PatientDetailPage() {
   const active = p.status === 'active'
   const pod = computePOD(p.surgery_date)
   const alerts = [...p.patient_alerts].sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
-  const meds = [...p.patient_meds].sort((a, b) => a.sort_order - b.sort_order)
 
   async function changeStatus() {
     if (!confirm) return
@@ -157,26 +157,7 @@ export function PatientDetailPage() {
         </div>
       </section>
 
-      {meds.length > 0 && (
-        <section aria-labelledby="med-h">
-          <h2 className="section-title" id="med-h">Medications</h2>
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Drug</th><th>Route</th><th>Dose</th><th>Frequency</th><th>Top-up</th></tr></thead>
-              <tbody>
-                {meds.map((m) => (
-                  <tr key={m.id}>
-                    <td><strong>{m.drug}</strong>{m.dosing === 'loading' && <div className="faint">loading dose</div>}</td>
-                    <td>{m.route}</td><td>{m.dose ?? '—'}</td>
-                    <td>{m.freq === 'Other' ? m.freq_custom || 'Other' : m.freq ?? '—'}</td>
-                    <td>{m.topup ?? '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
+      <MedSection patientId={p.id} meds={p.patient_meds} editable={active} nameOf={nameOf} />
 
       {painRounds.length > 0 && (
         <section aria-labelledby="chart-h">

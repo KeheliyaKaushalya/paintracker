@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
-import { fetchPatient, fetchPatients, fetchProfiles } from './api'
+import { fetchMedChanges, fetchPatient, fetchPatients, fetchProfiles } from './api'
 
 export const usePatients = (status: 'active' | 'discharged') =>
   useQuery({ queryKey: ['patients', status], queryFn: () => fetchPatients(status) })
@@ -16,3 +16,6 @@ export function useNameLookup(): (id: string) => string {
   const map = useMemo(() => new Map((data ?? []).map((p) => [p.id, p.full_name || 'Unnamed user'])), [data])
   return (id: string) => map.get(id) ?? 'Unknown'
 }
+
+export const useMedChanges = (patientId: string) =>
+  useQuery({ queryKey: ['med-changes', patientId], queryFn: () => fetchMedChanges(patientId) })

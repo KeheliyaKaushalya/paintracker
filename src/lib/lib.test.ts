@@ -7,6 +7,7 @@ import { effectiveRounds, latestPainRound, previousVersions } from './rounds'
 import type { Round } from './models'
 import { vitalWarnings } from './vitals'
 import { EPIDURAL_LEVELS, MED_FREQS } from './constants'
+import { isActiveMed, medFreqLabel } from './meds'
 
 const round = (over: Partial<Round>): Round => ({
   id: 'r', patient_id: 'p', kind: 'pain', round_date: '2026-10-20', round_time: '08:00:00', session: 'Morning',
@@ -110,5 +111,18 @@ describe('constants', () => {
   it('has no T1–T3 epidural levels but keeps T4-T5, T12-L1 and L5', () => {
     expect(EPIDURAL_LEVELS.filter((l) => /^T[1-3](-|$)/.test(l))).toEqual([])
     expect(EPIDURAL_LEVELS).toEqual(expect.arrayContaining(['T4-T5', 'T12-L1', 'L5']))
+  })
+})
+
+describe('medication helpers', () => {
+  it('only "active" counts as active', () => {
+    expect(isActiveMed({ status: 'active' })).toBe(true)
+    expect(isActiveMed({ status: 'stopped' })).toBe(false)
+    expect(isActiveMed({ status: 'removed' })).toBe(false)
+  })
+  it('shows the custom frequency for Other', () => {
+    expect(medFreqLabel({ freq: 'Other', freq_custom: 'Every 3 days' })).toBe('Every 3 days')
+    expect(medFreqLabel({ freq: 'Daily', freq_custom: null })).toBe('Daily')
+    expect(medFreqLabel({ freq: null, freq_custom: null })).toBe('—')
   })
 })

@@ -5,6 +5,7 @@ import {
 import { hhmm } from '../../lib/dates'
 import type { PatientFull, PatientInsert } from '../../lib/models'
 import type { BuildResult, FieldErrors } from '../rounds/schemas'
+import { isActiveMed } from '../../lib/meds'
 
 export interface MedFormRow {
   id: string
@@ -74,7 +75,7 @@ export function patientToForm(p: PatientFull): PatientFormValues {
     has_nerve_catheter: p.has_nerve_catheter, nv_type: s(p.nv_type) || 'Supraclavicular',
     nv_inserted_date: s(p.nv_inserted_date), nv_inserted_time: hhmm(p.nv_inserted_time),
     has_pca: p.has_pca, pca_drug: s(p.pca_drug), pca_bolus: s(p.pca_bolus), pca_lockout: s(p.pca_lockout), pca_max_hr: s(p.pca_max_hr),
-    meds: [...p.patient_meds].sort((a, b) => a.sort_order - b.sort_order).map((m) => ({
+    meds: p.patient_meds.filter(isActiveMed).sort((a, b) => a.sort_order - b.sort_order).map((m) => ({
       id: m.id, drug: m.drug, route: m.route, dose: s(m.dose), freq: s(m.freq), freq_custom: s(m.freq_custom),
       dosing: m.dosing === 'loading' ? 'loading' : 'single', topup: s(m.topup),
     })),

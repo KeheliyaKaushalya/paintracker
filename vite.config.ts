@@ -2,10 +2,11 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     VitePWA({
+      disable: mode === 'capacitor',
       registerType: 'autoUpdate',
       includeAssets: ['apple-touch-icon-180x180.png'],
       manifest: {
@@ -36,4 +37,4 @@ export default defineConfig({
       }
     })
   ]
-})
+}))

@@ -8,6 +8,8 @@ import type { Round } from './models'
 import { vitalWarnings } from './vitals'
 import { EPIDURAL_LEVELS, MED_FREQS } from './constants'
 import { isActiveMed, medFreqLabel } from './meds'
+import { isOpen, needsMyAck, unseenCount } from './alerts'
+import type { PatientAlertWithAcks, PatientFull } from './models'
 
 const round = (over: Partial<Round>): Round => ({
   id: 'r', patient_id: 'p', kind: 'pain', round_date: '2026-10-20', round_time: '08:00:00', session: 'Morning',
@@ -124,5 +126,27 @@ describe('medication helpers', () => {
     expect(medFreqLabel({ freq: 'Other', freq_custom: 'Every 3 days' })).toBe('Every 3 days')
     expect(medFreqLabel({ freq: 'Daily', freq_custom: null })).toBe('Daily')
     expect(medFreqLabel({ freq: null, freq_custom: null })).toBe('—')
+  })
+})
+
+describe('alert acknowledgement', () => {
+  const alert = (over: Partial<PatientAlertWithAcks> = {}): PatientAlertWithAcks => ({
+    id: 'a', patient_id: 'p', alert_text: 't', created_by: 'creator', created_at: '2026-10-20T01:00:00Z',
+    resolved_at: null, resolved_by: null, patient_alert_acks: [], ...over,
+  })
+  it('the creator never has to acknowledge their own alert', () => {
+    expect(needsMyAck(alert(), 'creator')).toBe(false)
+  })
+  it('others must, until they do', () => {
+    expect(needsMyAck(alert(), 'me')).toBe(true)
+    expect(needsMyAck(alert({ patient_alert_acks: [{ user_id: 'me' }] }), 'me')).toBe(false)
+  })
+  it('resolved alerts need nothing', () => {
+    expect(isOpen(alert({ resolved_at: '2026-10-21T00:00:00Z', resolved_by: 'x' }))).toBe(false)
+    expect(needsMyAck(alert({ resolved_at: '2026-10-21T00:00:00Z', resolved_by: 'x' }), 'me')).toBe(false)
+  })
+  it('counts patients, not alerts', () => {
+    const p = { patient_alerts: [alert(), alert({ id: 'b' })] } as unknown as PatientFull
+    expect(unseenCount([p, p], 'me')).toBe(2)
   })
 })

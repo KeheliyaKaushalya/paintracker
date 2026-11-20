@@ -50,6 +50,7 @@ declare
   who        uuid;
   mid uuid;
   base_rounds bigint;
+  aid uuid;
 begin
   -- ---- 002:Set-up (as the database owner) ----
   insert into auth.users (id, email) values
@@ -220,6 +221,26 @@ begin
   perform pg_temp.check_that(pg_temp.run_as(nurse_id,
     format($q$select public.change_med_dose('%s','5 g','Daily','','x')$q$, mid)) like 'error%',
     'a stopped medication cannot be changed');
+
+  -- ---- 011: alert acknowledgement and resolve ----
+  select id into aid from public.patient_alerts where patient_id = pid and created_by = nurse_id limit 1;
+  perform pg_temp.check_that(pg_temp.run_as(admin_id,
+    format($q$insert into public.patient_alert_acks (alert_id) values ('%s')$q$, aid)) = 'ok', 'a user can acknowledge an alert');
+  perform pg_temp.check_that(pg_temp.run_as(admin_id,
+    format($q$insert into public.patient_alert_acks (alert_id) values ('%s')$q$, aid)) like 'error%', 'an alert can only be acknowledged once per person');
+  perform pg_temp.check_that(pg_temp.run_as(admin_id,
+    format($q$insert into public.patient_alert_acks (alert_id, user_id) values ('%s','%s')$q$, aid, nurse_id)) like 'error%',
+    'nobody can acknowledge in someone else''s name');
+  perform pg_temp.check_that(pg_temp.run_as(pending_id,
+    format($q$insert into public.patient_alert_acks (alert_id) values ('%s')$q$, aid)) like 'error%', 'an unapproved user cannot acknowledge');
+  perform pg_temp.run_as(admin_id, format($q$update public.patient_alerts set resolved_by = '%s' where id = '%s'$q$, nurse_id, aid));
+  perform pg_temp.check_that((select resolved_by from public.patient_alerts where id = aid) = admin_id,
+    'resolving an alert always records the real person');
+  perform pg_temp.check_that((select alert_text from public.patient_alerts where id = aid) = 'Do not remove catheter',
+    'the alert text is untouched');
+  perform pg_temp.check_that(pg_temp.run_as(admin_id,
+    format($q$update public.patient_alerts set resolved_by = '%s' where id = '%s'$q$, admin_id, aid)) like 'error%',
+    'a resolved alert cannot be changed again');
 
   -- ---- roles, approval and the audit log ----
   perform pg_temp.run_as(nurse_id, format($q$update public.profiles set role = 'admin', active = true where id = '%s'$q$, nurse_id));

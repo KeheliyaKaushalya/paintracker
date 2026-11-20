@@ -4,13 +4,14 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
 import { useToast } from '../../components/Toast'
 import { AlertBanner, ConfirmDialog, Empty, ErrorBox, Spinner, Tag } from '../../components/ui'
-import { computePOD, fmtDate, fmtDateLong, hhmm } from '../../lib/dates'
+import { computePOD, fmtDate, fmtDateLong, fmtStamp, hhmm } from '../../lib/dates'
 import { effectiveRounds, newestFirst } from '../../lib/rounds'
 import { useAuth } from '../auth/AuthProvider'
 import { RoundItem } from '../rounds/RoundItem'
-import { addAlert, dischargePatient, readmitPatient } from './api'
+import { ackAlert, addAlert, dischargePatient, readmitPatient, resolveAlert } from './api'
 import { useNameLookup, usePatient } from './hooks'
 import { MedSection } from './Medsection'
+import { needsMyAck } from '../../lib/alerts'
 
 const PainChart = lazy(() => import('../rounds/PainChart'))
 
@@ -35,6 +36,7 @@ export function PatientDetailPage() {
   const [busy, setBusy] = useState(false)
   const [alertText, setAlertText] = useState('')
   const [addingAlert, setAddingAlert] = useState(false)
+  const [resolving, setResolving] = useState<string | null>(null)
 
   const p = q.data
   const rounds = useMemo(() => (p ? effectiveRounds(p.rounds).sort(newestFirst) : []), [p])
@@ -46,8 +48,9 @@ export function PatientDetailPage() {
 
   const active = p.status === 'active'
   const pod = computePOD(p.surgery_date)
-  const alerts = [...p.patient_alerts].sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
-
+  const alerts = [...p.patient_alerts].sort(
+    (a, b) => Number(!!a.resolved_at) - Number(!!b.resolved_at) || (a.created_at < b.created_at ? 1 : -1),
+  )
   async function changeStatus() {
     if (!confirm) return
     setBusy(true)
@@ -77,6 +80,31 @@ export function PatientDetailPage() {
       toast(e instanceof Error ? e.message : 'Could not add the alert', 'error')
     } finally {
       setAddingAlert(false)
+    }
+  }
+
+    async function acknowledge(alertId: string) {
+    try {
+      await ackAlert(alertId)
+      await qc.invalidateQueries()
+      toast('Alert acknowledged')
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Could not acknowledge the alert', 'error')
+    }
+  }
+
+  async function confirmResolve() {
+    if (!resolving || !session) return
+    setBusy(true)
+    try {
+      await resolveAlert(resolving, session.user.id)
+      await qc.invalidateQueries()
+      toast('Alert resolved')
+      setResolving(null)
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Could not resolve the alert', 'error')
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -123,7 +151,22 @@ export function PatientDetailPage() {
         <div className="stack-s">
           {alerts.length === 0 && <p className="faint">No alerts.</p>}
           {alerts.map((a) => (
-            <AlertBanner key={a.id} text={a.alert_text} meta={`${nameOf(a.created_by)} · ${fmtDateLong(a.created_at.slice(0, 10))}`} />
+            <AlertBanner
+              key={a.id}
+              resolved={!!a.resolved_at}
+              text={a.alert_text}
+              meta={`${nameOf(a.created_by)} · ${fmtStamp(a.created_at)}${a.resolved_at ? ` · Resolved by ${a.resolved_by ? nameOf(a.resolved_by) : 'unknown'}, ${fmtStamp(a.resolved_at)}` : ''}`}
+            >
+              {a.patient_alert_acks.length > 0 && (
+                <span className="faint">Seen by {a.patient_alert_acks.map((k) => nameOf(k.user_id)).join(', ')}</span>
+              )}
+              {active && session && needsMyAck(a, session.user.id) && (
+                <button className="btn btn-primary btn-sm" onClick={() => void acknowledge(a.id)}>Acknowledge</button>
+              )}
+              {active && !a.resolved_at && (
+                <button className="btn btn-outline btn-sm" onClick={() => setResolving(a.id)}>Resolve</button>
+              )}
+            </AlertBanner>
           ))}
           {active && (
             <div className="stack-s" style={{ marginTop: 6 }}>
@@ -132,7 +175,7 @@ export function PatientDetailPage() {
               <button className="btn btn-outline btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => void submitAlert()} disabled={!alertText.trim() || addingAlert}>
                 {addingAlert ? 'Adding…' : 'Add alert'}
               </button>
-              <span className="hint">Alerts cannot be edited or deleted, so add a new one if things change.</span>
+              <span className="hint">Alerts cannot be edited or deleted. When one no longer applies, resolve it.</span>
             </div>
           )}
         </div>
@@ -186,6 +229,16 @@ export function PatientDetailPage() {
           busy={busy}
           onCancel={() => setConfirm(null)}
           onConfirm={() => void changeStatus()}
+        />
+      )}
+      {resolving && (
+        <ConfirmDialog
+          title="Resolve this alert?"
+          message="It will be greyed out and will no longer need acknowledging. It stays on record."
+          confirmLabel="Resolve"
+          busy={busy}
+          onCancel={() => setResolving(null)}
+          onConfirm={() => void confirmResolve()}
         />
       )}
     </div>

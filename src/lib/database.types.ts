@@ -72,6 +72,8 @@ type AlertRow = {
   alert_text: string
   created_by: string
   created_at: string
+  resolved_at: string | null
+  resolved_by: string | null
 }
 
 type RoundRow = {
@@ -110,6 +112,13 @@ type MedChangeRow = {
   reason: string | null
   changed_by: string
   changed_at: string
+}
+
+type AlertAckRow = {
+  id: string
+  alert_id: string
+  user_id: string
+  acked_at: string
 }
 
 type AuditRow = {
@@ -154,6 +163,12 @@ export type Database = {
         Row: AlertRow
         Insert: Partial<AlertRow> & Pick<AlertRow, 'patient_id' | 'alert_text'>
         Update: Partial<AlertRow>
+        Relationships: []
+      }
+      patient_alert_acks: {
+        Row: AlertAckRow
+        Insert: Partial<AlertAckRow> & Pick<AlertAckRow, 'alert_id'>
+        Update: Partial<AlertAckRow>
         Relationships: []
       }
       rounds: {

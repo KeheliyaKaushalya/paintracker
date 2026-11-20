@@ -5,13 +5,17 @@ import { CATEGORIES } from '../../lib/constants'
 import { categoryCounts, emptyFilters, filterPatients, sortBoard, type BoardFilters } from './filters'
 import { useNameLookup, usePatients } from './hooks'
 import { PatientCard } from './PatientCard'
+import { unseenCount } from '../../lib/alerts'
+import { useAuth } from '../auth/AuthProvider'
 
 export function BoardPage() {
   const q = usePatients('active')
   const nameOf = useNameLookup()
+  const { session } = useAuth()
   const [f, setF] = useState<BoardFilters>(emptyFilters)
   const patients = q.data
   const counts = useMemo(() => categoryCounts(patients ?? []), [patients])
+  const unseen = useMemo(() => (session ? unseenCount(patients ?? [], session.user.id) : 0), [patients, session])
   const wards = useMemo(() => [...new Set((patients ?? []).map((p) => p.ward))].sort(), [patients])
   const shown = useMemo(() => sortBoard(filterPatients(patients ?? [], f)), [patients, f])
   const set = (patch: Partial<BoardFilters>) => setF((cur) => ({ ...cur, ...patch }))
@@ -25,6 +29,12 @@ export function BoardPage() {
           <p className="muted">{patients ? `${patients.length} active patients under pain follow-up` : 'Loading…'}</p>
         </div>
       </div>
+
+      {unseen > 0 && (
+        <div className="banner banner-warn" role="status">
+          <span>{unseen === 1 ? '1 patient has' : `${unseen} patients have`} alerts you have not acknowledged.</span>
+        </div>
+      )}
 
       <div className="cat-tabs" role="tablist" aria-label="Patient category">
         {['All', ...CATEGORIES].map((c) => (

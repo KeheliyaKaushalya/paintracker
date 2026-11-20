@@ -45,13 +45,14 @@ export function Tag({ tone, children }: { tone?: 'primary' | 'warn' | 'alert' | 
   return <span className={`tag ${tone ?? ''}`}>{children}</span>
 }
 
-export function AlertBanner({ text, meta }: { text: string; meta?: string }) {
+export function AlertBanner({ text, meta, resolved, children }: { text: string; meta?: string; resolved?: boolean; children?: ReactNode }) {
   return (
-    <div className="alert-banner" role="note">
+    <div className="alert-banner" role="note" style={resolved ? { opacity: 0.6 } : undefined}>
       <Icon name="alert" />
       <div className="grow">
         <div>{text}</div>
         {meta && <div className="meta">{meta}</div>}
+        {children && <div className="row wrap" style={{ marginTop: 8 }}>{children}</div>}
       </div>
     </div>
   )

@@ -8,7 +8,7 @@ type WithoutRounds = Omit<PatientFull, 'rounds'>
 
 /** All patients with a given status, with their medications, alerts and rounds. */
 export async function fetchPatients(status: 'active' | 'discharged'): Promise<PatientFull[]> {
-  const base = supabase.from('patients').select('*, patient_meds(*), patient_alerts(*)').eq('status', status)
+  const base = supabase.from('patients').select('*, patient_meds(*), patient_alerts(*, patient_alert_acks(user_id))').eq('status', status)
   const { data, error } =
     status === 'active'
       ? await base.order('ward').order('full_name')
@@ -30,7 +30,7 @@ export async function fetchPatients(status: 'active' | 'discharged'): Promise<Pa
 
 export async function fetchPatient(id: string): Promise<PatientFull | null> {
   const { data, error } = await supabase
-    .from('patients').select('*, patient_meds(*), patient_alerts(*)').eq('id', id).maybeSingle()
+    .from('patients').select('*, patient_meds(*), patient_alerts(*, patient_alert_acks(user_id))').eq('id', id).maybeSingle()
   if (error) throw toError(error)
   if (!data) return null
   const { data: rounds, error: e2 } = await supabase.from('rounds').select('*').eq('patient_id', id)
@@ -114,4 +114,15 @@ export async function fetchMedChanges(patientId: string): Promise<MedChange[]> {
   const { data, error } = await supabase.from('patient_med_changes').select('*').eq('patient_id', patientId).order('changed_at', { ascending: false })
   if (error) throw toError(error)
   return (data ?? []) as MedChange[]
+}
+
+export async function ackAlert(alertId: string): Promise<void> {
+  const { error } = await supabase.from('patient_alert_acks').insert({ alert_id: alertId })
+  if (error && error.code !== '23505') throw toError(error) // 23505 = already acknowledged
+}
+
+export async function resolveAlert(alertId: string, userId: string): Promise<void> {
+  const { error } = await supabase.from('patient_alerts')
+    .update({ resolved_at: new Date().toISOString(), resolved_by: userId }).eq('id', alertId)
+  if (error) throw toError(error)
 }

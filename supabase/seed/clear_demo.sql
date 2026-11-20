@@ -3,6 +3,7 @@
 -- The audit log keeps its record of what happened.
 delete from public.patient_med_changes where patient_id in (select id from public.patients where bht like 'DEMO/%');
 delete from public.patient_meds   where patient_id in (select id from public.patients where bht like 'DEMO/%');
+delete from public.patient_alert_acks where alert_id in (select id from public.patient_alerts where patient_id in (select id from public.patients where bht like 'DEMO/%'));
 delete from public.patient_alerts where patient_id in (select id from public.patients where bht like 'DEMO/%');
 -- break amendment links first, then rounds
 update public.rounds set amended_of = null where patient_id in (select id from public.patients where bht like 'DEMO/%');

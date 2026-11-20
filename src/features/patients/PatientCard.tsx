@@ -6,6 +6,8 @@ import { painLevel, painWord } from '../../lib/pain'
 import { latestPainRound, latestRound } from '../../lib/rounds'
 import { isUrgent } from './filters'
 import { isActiveMed } from '../../lib/meds'
+import { isOpen, needsMyAck } from '../../lib/alerts'
+import { useAuth } from '../auth/AuthProvider'
 
 function Tile({ label, value }: { label: string; value: number | null | undefined }) {
   if (value == null) {
@@ -24,7 +26,9 @@ function Tile({ label, value }: { label: string; value: number | null | undefine
 export function PatientCard({ patient: p, nameOf }: { patient: PatientFull; nameOf: (id: string) => string }) {
   const pain = latestPainRound(p.rounds)
   const last = latestRound(p.rounds)
-  const alert = [...p.patient_alerts].sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0]
+  const { session } = useAuth()
+  const alert = [...p.patient_alerts].filter(isOpen).sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0]
+  const unseen = !!session && p.patient_alerts.some((a) => needsMyAck(a, session.user.id))
   const pod = computePOD(p.surgery_date)
   const meds = p.patient_meds.filter(isActiveMed).sort((a, b) => a.sort_order - b.sort_order)
   
@@ -45,6 +49,7 @@ export function PatientCard({ patient: p, nameOf }: { patient: PatientFull; name
         <div className="stack-s" style={{ alignItems: 'flex-end' }}>
           <Tag tone="primary">{p.ward}</Tag>
           {isUrgent(p) && <Tag tone="alert">Urgent review</Tag>}
+          {unseen && <Tag tone="alert">New alert</Tag>}
         </div>
       </div>
 

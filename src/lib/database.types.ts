@@ -121,6 +121,14 @@ type AlertAckRow = {
   acked_at: string
 }
 
+type WardRow = {
+  id: string
+  name: string
+  active: boolean
+  created_by: string | null
+  created_at: string
+}
+
 type AuditRow = {
   id: number
   at: string
@@ -175,6 +183,12 @@ export type Database = {
         Row: RoundRow
         Insert: Partial<RoundRow> & Pick<RoundRow, 'patient_id' | 'kind' | 'round_date'>
         Update: Partial<RoundRow>
+        Relationships: []
+      }
+      wards: {
+        Row: WardRow
+        Insert: Partial<WardRow> & Pick<WardRow, 'name'>
+        Update: Partial<WardRow>
         Relationships: []
       }
       audit_log: {

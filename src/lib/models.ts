@@ -14,6 +14,7 @@ export type AlertAck = T['patient_alert_acks']['Row']
 export type PatientAlertWithAcks = PatientAlert & { patient_alert_acks: Pick<AlertAck, 'user_id'>[] }
 export type Round = T['rounds']['Row']
 export type RoundInsert = T['rounds']['Insert']
+export type Ward = T['wards']['Row']
 
 /** A patient together with everything attached to it. */
 export type PatientFull = Patient & {

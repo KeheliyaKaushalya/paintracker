@@ -7,6 +7,7 @@ import type { Profile, Role } from '../../lib/models'
 import { useAuth } from '../auth/AuthProvider'
 import { updateProfile } from '../patients/api'
 import { useProfiles } from '../patients/hooks'
+import { WardsAdmin } from './WardsAdmin'
 
 export function TeamPage() {
   const q = useProfiles()
@@ -81,6 +82,7 @@ export function TeamPage() {
           You can't change your own role or deactivate yourself, so there is always one admin. The moment someone is deactivated the server stops giving them any patient data, and their screen follows within about two minutes.
         </p>
       </div>
+      <WardsAdmin/>
     </div>
   )
 }

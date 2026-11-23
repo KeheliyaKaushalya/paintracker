@@ -242,6 +242,16 @@ begin
     format($q$update public.patient_alerts set resolved_by = '%s' where id = '%s'$q$, admin_id, aid)) like 'error%',
     'a resolved alert cannot be changed again');
 
+  -- ---- 012: wards ----
+  perform pg_temp.check_that(pg_temp.count_as(nurse_id, 'select count(*) from public.wards') >= 6, 'wards are readable and pre-filled');
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id, $q$insert into public.wards (name) values ('Ward 99')$q$) = 'ok', 'any active user can add a ward');
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id, $q$insert into public.wards (name) values ('ward 99 ')$q$) like 'error%',
+    'a duplicate ward name (any capitalisation) is rejected');
+  perform pg_temp.run_as(nurse_id, $q$update public.wards set active = false$q$);
+  perform pg_temp.check_that(not exists (select 1 from public.wards where not active), 'a nurse cannot deactivate wards');
+  perform pg_temp.run_as(admin_id, $q$update public.wards set active = false where name = 'Ward 99'$q$);
+  perform pg_temp.check_that(exists (select 1 from public.wards where not active), 'an admin can deactivate a ward');
+
   -- ---- roles, approval and the audit log ----
   perform pg_temp.run_as(nurse_id, format($q$update public.profiles set role = 'admin', active = true where id = '%s'$q$, nurse_id));
   perform pg_temp.check_that((select role from public.profiles where id = nurse_id) = 'nurse',

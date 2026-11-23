@@ -1,6 +1,6 @@
 import { toError } from '../../lib/errors'
 import { todayISO } from '../../lib/dates'
-import type { MedChange, PatientFull, Profile, Role, Round } from '../../lib/models'
+import type { MedChange, PatientFull, Profile, Role, Round, Ward } from '../../lib/models'
 import { supabase } from '../../lib/supabase'
 import type { PatientBuild } from './schemas'
 
@@ -47,6 +47,7 @@ export async function createPatient(build: PatientBuild, userId: string): Promis
   const id = crypto.randomUUID()
   const { error } = await supabase.from('patients').insert({ ...build.patient, id, created_by: userId })
   if (error) throw toError(error)
+  void addWard(build.patient.ward).catch(() => undefined)
 
   const warnings: string[] = []
   if (build.meds.length > 0) {
@@ -124,5 +125,23 @@ export async function ackAlert(alertId: string): Promise<void> {
 export async function resolveAlert(alertId: string, userId: string): Promise<void> {
   const { error } = await supabase.from('patient_alerts')
     .update({ resolved_at: new Date().toISOString(), resolved_by: userId }).eq('id', alertId)
+  if (error) throw toError(error)
+}
+export async function fetchWards(): Promise<Ward[]> {
+  const { data, error } = await supabase.from('wards').select('*').order('name')
+  if (error) throw toError(error)
+  return (data ?? []) as Ward[]
+}
+
+/** Adds a ward if it does not exist yet (a duplicate in any capitalisation is ignored). */
+export async function addWard(name: string): Promise<void> {
+  const clean = name.trim()
+  if (!clean) return
+  const { error } = await supabase.from('wards').insert({ name: clean })
+  if (error && error.code !== '23505') throw toError(error)
+}
+
+export async function setWardActive(id: string, active: boolean): Promise<void> {
+  const { error } = await supabase.from('wards').update({ active }).eq('id', id)
   if (error) throw toError(error)
 }

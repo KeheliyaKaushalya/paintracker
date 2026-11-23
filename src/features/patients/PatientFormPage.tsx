@@ -10,7 +10,7 @@ import {
 import { friendlyMessage } from '../../lib/errors'
 import { useAuth } from '../auth/AuthProvider'
 import { createPatient, updatePatient } from './api'
-import { usePatient } from './hooks'
+import { usePatient, useWards} from './hooks'
 import {
   buildPatient, emptyPatientForm, newMedRow, patientToForm, type MedFormRow, type PatientFormValues,
 } from './schemas'
@@ -66,6 +66,8 @@ function PatientForm({ initial, patientId, existingMedIds }: { initial: PatientF
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const wardsQ = useWards()
+  const wardNames = wardsQ.data ? wardsQ.data.filter((w) => w.active).map((w) => w.name) : [...WARDS_DEFAULT]
   const set = <K extends keyof PatientFormValues>(k: K, v: PatientFormValues[K]) => setF((cur) => ({ ...cur, [k]: v }))
   const setMed = (id: string, patch: Partial<MedFormRow>) => setF((cur) => ({ ...cur, meds: cur.meds.map((m) => (m.id === id ? { ...m, ...patch } : m)) }))
   const err = (k: string) => errors[k]
@@ -126,7 +128,7 @@ function PatientForm({ initial, patientId, existingMedIds }: { initial: PatientF
         </div>
         <Field id="ward" label="Ward" error={err('ward')}>
           <input id="ward" className="input" list="wards" autoComplete="off" aria-invalid={bad('ward')} value={f.ward} onChange={(e) => set('ward', e.target.value)} />
-          <datalist id="wards">{WARDS_DEFAULT.map((w) => <option key={w} value={w} />)}</datalist>
+          <datalist id="wards">{wardNames.map((w) => <option key={w} value={w} />)}</datalist>
         </Field>
       </Section>
 

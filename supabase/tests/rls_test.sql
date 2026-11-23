@@ -269,7 +269,14 @@ begin
     'only one assignment per shift per day');
   perform pg_temp.check_that(pg_temp.run_as(pending_id,
     format($q$insert into public.shift_assignments (shift_date, template_id) values (current_date + 1, '%s')$q$, tid)) like 'error%',
-    'an unapproved user cannot assign shifts');S
+    'an unapproved user cannot assign shifts');
+
+  -- ---- 014: export log ----
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id,
+    $q$insert into public.export_log (kind, row_count) values ('patients_csv', 1)$q$) like 'error%', 'a nurse cannot export data');
+  perform pg_temp.check_that(pg_temp.run_as(admin_id,
+    $q$insert into public.export_log (kind, row_count) values ('patients_csv', 1)$q$) = 'ok', 'an admin export is logged');
+  perform pg_temp.check_that(pg_temp.count_as(nurse_id, 'select count(*) from public.export_log') = 0, 'a nurse cannot read the export log');
 
   -- ---- roles, approval and the audit log ----
   perform pg_temp.run_as(nurse_id, format($q$update public.profiles set role = 'admin', active = true where id = '%s'$q$, nurse_id));

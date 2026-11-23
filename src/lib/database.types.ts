@@ -149,6 +149,14 @@ type ShiftAssignmentRow = {
   updated_at: string
 }
 
+type ExportLogRow = {
+  id: string
+  kind: string
+  row_count: number
+  exported_by: string
+  exported_at: string
+}
+
 type AuditRow = {
   id: number
   at: string
@@ -209,6 +217,12 @@ export type Database = {
         Row: WardRow
         Insert: Partial<WardRow> & Pick<WardRow, 'name'>
         Update: Partial<WardRow>
+        Relationships: []
+      }
+      export_log: {
+        Row: ExportLogRow
+        Insert: Partial<ExportLogRow> & Pick<ExportLogRow, 'kind' | 'row_count'>
+        Update: Partial<ExportLogRow>
         Relationships: []
       }
       audit_log: {

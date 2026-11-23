@@ -11,6 +11,7 @@ import { isActiveMed, medFreqLabel } from './meds'
 import { isOpen, needsMyAck, unseenCount } from './alerts'
 import type { PatientAlertWithAcks, PatientFull } from './models'
 import { addDays, currentShifts, shiftWindow } from './shifts'
+import { toCsv, toOds } from './export'
 
 const round = (over: Partial<Round>): Round => ({
   id: 'r', patient_id: 'p', kind: 'pain', round_date: '2026-10-20', round_time: '08:00:00', session: 'Morning',
@@ -175,5 +176,21 @@ describe('shifts', () => {
   it('treats the end time as outside the shift', () => {
     const ids = currentShifts([day, night], at(2026, 11, 17, 20)).map((s) => s.template.id)
     expect(ids).toEqual(['night'])
+  })
+})
+describe('export', () => {
+  it('quotes commas, quotes and new lines', () => {
+    const csv = toCsv([['a,b', 'say "hi"', 'line1\nline2']])
+    expect(csv).toContain('"a,b","say ""hi""","line1\nline2"')
+  })
+  it('defuses spreadsheet formulas', () => {
+    expect(toCsv([['=1+1', '-5 mg', '@x']])).toContain("'=1+1,'-5 mg,'@x")
+  })
+  it('keeps numbers and blanks', () => {
+    expect(toCsv([[3, null, undefined, 'x']])).toContain('3,,,x')
+  })
+  it('makes a zip that starts with the "mimetype" file', () => {
+    const zip = toOds([{ name: 'S', rows: [['a', 1]] }])
+    expect(new TextDecoder().decode(zip.slice(0, 40))).toContain('mimetype')
   })
 })

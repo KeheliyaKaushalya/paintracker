@@ -9,6 +9,7 @@ import { updateProfile } from '../patients/api'
 import { useProfiles } from '../patients/hooks'
 import { WardsAdmin } from './WardsAdmin'
 import { ShiftTemplatesAdmin } from './ShiftTemplatesAdmin'
+import { Link } from 'react-router-dom'
 
 export function TeamPage() {
   const q = useProfiles()
@@ -40,6 +41,9 @@ export function TeamPage() {
           <h1>Team</h1>
           <p className="muted">Approve new users, set roles, and switch off people who have left.</p>
         </div>
+      </div>
+      <div className="row wrap" style={{ marginBottom: 12 }}>
+        <Link to="/export" className="btn btn-outline btn-sm">Export data</Link>
       </div>
       {q.isLoading && <Spinner />}
       {q.error && <ErrorBox error={q.error} onRetry={() => void q.refetch()} />}

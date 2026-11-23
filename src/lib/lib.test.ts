@@ -10,6 +10,7 @@ import { EPIDURAL_LEVELS, MED_FREQS } from './constants'
 import { isActiveMed, medFreqLabel } from './meds'
 import { isOpen, needsMyAck, unseenCount } from './alerts'
 import type { PatientAlertWithAcks, PatientFull } from './models'
+import { addDays, currentShifts, shiftWindow } from './shifts'
 
 const round = (over: Partial<Round>): Round => ({
   id: 'r', patient_id: 'p', kind: 'pain', round_date: '2026-10-20', round_time: '08:00:00', session: 'Morning',
@@ -148,5 +149,31 @@ describe('alert acknowledgement', () => {
   it('counts patients, not alerts', () => {
     const p = { patient_alerts: [alert(), alert({ id: 'b' })] } as unknown as PatientFull
     expect(unseenCount([p, p], 'me')).toBe(2)
+  })
+})
+describe('shifts', () => {
+  const day = { id: 'day', start_time: '08:00:00', end_time: '20:00:00' }
+  const night = { id: 'night', start_time: '20:00:00', end_time: '08:00:00' }
+  const at = (y: number, mo: number, d: number, h: number, mi = 0) => new Date(y, mo - 1, d, h, mi).getTime()
+  it('adds days across month ends', () => {
+    expect(addDays('2026-10-31', 1)).toBe('2026-11-01')
+    expect(addDays('2026-11-01', -1)).toBe('2026-10-31')
+  })
+  it('knows a night shift ends the next morning', () => {
+    const w = shiftWindow('2026-11-17', '20:00:00', '08:00:00')
+    expect(w.end - w.start).toBe(12 * 3600)
+  })
+  it('puts 02:00 in YESTERDAY\'s night shift', () => {
+    const now = currentShifts([day, night], at(2026, 11, 17, 2))
+    expect(now).toHaveLength(1)
+    expect(now[0]).toMatchObject({ date: '2026-11-16', template: { id: 'night' } })
+  })
+  it('puts 09:00 in today\'s day shift', () => {
+    const now = currentShifts([day, night], at(2026, 11, 17, 9))
+    expect(now[0]).toMatchObject({ date: '2026-11-17', template: { id: 'day' } })
+  })
+  it('treats the end time as outside the shift', () => {
+    const ids = currentShifts([day, night], at(2026, 11, 17, 20)).map((s) => s.template.id)
+    expect(ids).toEqual(['night'])
   })
 })

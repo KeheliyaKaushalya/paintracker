@@ -7,6 +7,7 @@ import { useNameLookup, usePatients } from './hooks'
 import { PatientCard } from './PatientCard'
 import { unseenCount } from '../../lib/alerts'
 import { useAuth } from '../auth/AuthProvider'
+import { ShiftStrip } from '../shifts/ShiftStrip'
 
 export function BoardPage() {
   const q = usePatients('active')
@@ -35,7 +36,7 @@ export function BoardPage() {
           <span>{unseen === 1 ? '1 patient has' : `${unseen} patients have`} alerts you have not acknowledged.</span>
         </div>
       )}
-
+    <ShiftStrip />
       <div className="cat-tabs" role="tablist" aria-label="Patient category">
         {['All', ...CATEGORIES].map((c) => (
           <button key={c} role="tab" aria-selected={f.category === c} className={`cat-tab ${f.category === c ? 'active' : ''}`} onClick={() => set({ category: c })}>

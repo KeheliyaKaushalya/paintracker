@@ -51,6 +51,7 @@ declare
   mid uuid;
   base_rounds bigint;
   aid uuid;
+  tid uuid;
 begin
   -- ---- 002:Set-up (as the database owner) ----
   insert into auth.users (id, email) values
@@ -251,6 +252,24 @@ begin
   perform pg_temp.check_that(not exists (select 1 from public.wards where not active), 'a nurse cannot deactivate wards');
   perform pg_temp.run_as(admin_id, $q$update public.wards set active = false where name = 'Ward 99'$q$);
   perform pg_temp.check_that(exists (select 1 from public.wards where not active), 'an admin can deactivate a ward');
+
+  -- ---- 013: shifts ----
+  select id into tid from public.shift_templates where name = 'Day';
+  perform pg_temp.check_that(pg_temp.count_as(nurse_id, 'select count(*) from public.shift_templates') = 2, 'shift templates are readable and pre-filled');
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id,
+    $q$insert into public.shift_templates (name, start_time, end_time) values ('X','01:00','02:00')$q$) like 'error%',
+    'a nurse cannot create shift templates');
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id,
+    format($q$insert into public.shift_assignments (shift_date, template_id, assignee_name) values (current_date, '%s', 'Dr Outside')$q$, tid)) = 'ok',
+    'an active user can assign a shift');
+  perform pg_temp.check_that((select assigned_by from public.shift_assignments where shift_date = current_date and template_id = tid) = nurse_id,
+    'who assigned a shift is recorded automatically');
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id,
+    format($q$insert into public.shift_assignments (shift_date, template_id) values (current_date, '%s')$q$, tid)) like 'error%',
+    'only one assignment per shift per day');
+  perform pg_temp.check_that(pg_temp.run_as(pending_id,
+    format($q$insert into public.shift_assignments (shift_date, template_id) values (current_date + 1, '%s')$q$, tid)) like 'error%',
+    'an unapproved user cannot assign shifts');S
 
   -- ---- roles, approval and the audit log ----
   perform pg_temp.run_as(nurse_id, format($q$update public.profiles set role = 'admin', active = true where id = '%s'$q$, nurse_id));

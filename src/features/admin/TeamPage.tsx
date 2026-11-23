@@ -8,6 +8,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { updateProfile } from '../patients/api'
 import { useProfiles } from '../patients/hooks'
 import { WardsAdmin } from './WardsAdmin'
+import { ShiftTemplatesAdmin } from './ShiftTemplatesAdmin'
 
 export function TeamPage() {
   const q = useProfiles()
@@ -83,6 +84,7 @@ export function TeamPage() {
         </p>
       </div>
       <WardsAdmin/>
+      <ShiftTemplatesAdmin/>
     </div>
   )
 }

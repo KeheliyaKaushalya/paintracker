@@ -15,6 +15,8 @@ export type PatientAlertWithAcks = PatientAlert & { patient_alert_acks: Pick<Ale
 export type Round = T['rounds']['Row']
 export type RoundInsert = T['rounds']['Insert']
 export type Ward = T['wards']['Row']
+export type ShiftTemplate = T['shift_templates']['Row']
+export type ShiftAssignment = T['shift_assignments']['Row']
 
 /** A patient together with everything attached to it. */
 export type PatientFull = Patient & {

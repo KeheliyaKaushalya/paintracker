@@ -14,6 +14,7 @@ const TeamPage = lazy(() => import('./features/admin/TeamPage').then((m) => ({ d
 const PatientFormPage = lazy(() => import('./features/patients/PatientFormPage').then((m) => ({ default: m.PatientFormPage })))
 const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 const RoundFormPage = lazy(() => import('./features/rounds/RoundFormPage').then((m) => ({ default: m.RoundFormPage })))
+const ShiftsPage = lazy(() => import('./features/shifts/ShiftsPage').then((m) => ({ default: m.ShiftsPage })))
 
 function ConfigProblem() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
           <Route path="patients/:id/round" element={<RoundFormPage />} />
           <Route path="team" element={<RequireAdmin><TeamPage /></RequireAdmin>} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="shifts" element={<ShiftsPage />} />
           <Route path="*" element={<Empty title="Page not found"><Link to="/">Back to the board</Link></Empty>} />
         </Route>
       </Route>

@@ -129,6 +129,26 @@ type WardRow = {
   created_at: string
 }
 
+type ShiftTemplateRow = {
+  id: string
+  name: string
+  start_time: string
+  end_time: string
+  active: boolean
+  created_at: string
+}
+
+type ShiftAssignmentRow = {
+  id: string
+  shift_date: string
+  template_id: string
+  assignee_id: string | null
+  assignee_name: string | null
+  note: string | null
+  assigned_by: string | null
+  updated_at: string
+}
+
 type AuditRow = {
   id: number
   at: string
@@ -195,6 +215,18 @@ export type Database = {
         Row: AuditRow
         Insert: Partial<AuditRow> & Pick<AuditRow, 'table_name' | 'action'>
         Update: Partial<AuditRow>
+        Relationships: []
+      }
+      shift_templates: {
+        Row: ShiftTemplateRow
+        Insert: Partial<ShiftTemplateRow> & Pick<ShiftTemplateRow, 'name' | 'start_time' | 'end_time'>
+        Update: Partial<ShiftTemplateRow>
+        Relationships: []
+      }
+      shift_assignments: {
+        Row: ShiftAssignmentRow
+        Insert: Partial<ShiftAssignmentRow> & Pick<ShiftAssignmentRow, 'shift_date' | 'template_id'>
+        Update: Partial<ShiftAssignmentRow>
         Relationships: []
       }
     }

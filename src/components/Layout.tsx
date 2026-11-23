@@ -6,6 +6,7 @@ import { useOutboxFlusher, useRealtimeSync } from './background'
 import { Icon } from './Icon'
 import { OutboxBanner } from './OutboxBanner'
 import { UpdatePrompt } from './UpdatePrompt'
+import { useShiftNotices } from '../features/shifts/useShiftNotices'
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -19,6 +20,7 @@ export function Layout() {
   useIdleLogout()
   useRealtimeSync(true)
   useOutboxFlusher(session?.user.id)
+  useShiftNotices(session?.user.id)
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
   const isAdmin = profile?.role === 'admin'
@@ -67,6 +69,7 @@ export function Layout() {
         <NavLink to="/" end className={({ isActive }) => `navbtn ${isActive ? 'active' : ''}`}><Icon name="board" />Board</NavLink>
         <NavLink to="/discharged" className={({ isActive }) => `navbtn ${isActive ? 'active' : ''}`}><Icon name="archive" />Discharged</NavLink>
         {isAdmin && <NavLink to="/team" className={({ isActive }) => `navbtn ${isActive ? 'active' : ''}`}><Icon name="users" />Team</NavLink>}
+        <NavLink to="/shifts" className={({ isActive }) => `navbtn ${isActive ? 'active' : ''}`}><Icon name="user" />Shifts</NavLink>
       </nav>
       <UpdatePrompt />
     </>

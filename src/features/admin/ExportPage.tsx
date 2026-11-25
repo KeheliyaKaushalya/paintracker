@@ -16,11 +16,15 @@ const stampName = () => new Date().toISOString().slice(0, 10)
 
 function patientRows(list: PatientFull[]): Cell[][] {
   return [
-    ['BHT', 'Name', 'Age', 'Sex', 'Ward', 'Category', 'Surgery', 'Surgery date', 'Anaesthesia', 'Epidural level', 'Nerve catheter', 'PCA drug', 'Status', 'Discharged'],
+    [
+      'BHT', 'Name', 'Age', 'Sex', 'Ward', 'Category', 'Surgery', 'Surgery date', 'Anaesthesia', 'Epidural level', 'Nerve catheter', 'PCA drug', 'Status', 'Discharged',
+      'PDPH level', 'PDPH needle', 'PDPH attempts', 'PDPH symptoms', 'PDPH complaint', 'PDPH current condition', 'PDPH management',
+    ],
     ...list.map((p) => [
       p.bht, p.full_name, p.age, p.sex, p.ward, p.category, p.surgery, p.surgery_date, p.anaesthesia_mode,
       p.has_epidural ? p.ep_level : '', p.has_nerve_catheter ? p.nv_type : '', p.has_pca ? p.pca_drug : '',
       p.status, p.discharged_date,
+      p.pdph_level, p.pdph_needle, p.pdph_attempts, p.pdph_symptoms, p.pdph_complaint, p.pdph_condition, p.pdph_management,
     ]),
   ]
 }

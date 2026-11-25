@@ -48,6 +48,13 @@ type PatientRow = {
   deleted_at: string | null
   deleted_by: string | null
   delete_reason: string | null
+  pdph_level: string | null
+  pdph_needle: string | null
+  pdph_attempts: number | null
+  pdph_symptoms: string | null
+  pdph_complaint: string | null
+  pdph_condition: string | null
+  pdph_management: string | null
 }
 
 type MedRow = {

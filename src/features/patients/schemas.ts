@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import {
-  ANAESTHESIA_MODES, CATEGORIES, MED_DOSINGS, MED_DRUGS, MED_FREQS, MED_ROUTES, NERVE_TYPES, SEXES,
+  ANAESTHESIA_MODES, CATEGORIES, MED_DOSINGS, MED_DRUGS, MED_FREQS, MED_ROUTES, NERVE_TYPES, SEXES, NOTE_CATEGORIES,
 } from '../../lib/constants'
 import { hhmm } from '../../lib/dates'
 import type { PatientFull, PatientInsert } from '../../lib/models'
@@ -47,6 +47,13 @@ export interface PatientFormValues {
   pca_max_hr: string
   meds: MedFormRow[]
   new_alert: string
+  pdph_level: string
+  pdph_needle: string
+  pdph_attempts: string
+  pdph_symptoms: string
+  pdph_complaint: string
+  pdph_condition: string
+  pdph_management: string
 }
 
 export const newMedRow = (): MedFormRow => ({
@@ -55,7 +62,8 @@ export const newMedRow = (): MedFormRow => ({
 
 export function emptyPatientForm(): PatientFormValues {
   return {
-    full_name: '', age: '', sex: '', bht: '', ward: '7A', category: 'Surgery', category_note: '',
+    full_name: '', age: '', sex: '', bht: '', ward: '7A', category: 'Surgery', category_note: '', 
+    pdph_level: '', pdph_needle: '', pdph_attempts: '', pdph_symptoms: '', pdph_complaint: '', pdph_condition: '', pdph_management: '',
     surgery: '', indication: '', surgery_date: '', surgery_time: '', anaesthesia_mode: '',
     has_epidural: false, ep_level: '', ep_inserted_date: '', ep_inserted_time: '', ep_test_dose: '',
     has_nerve_catheter: false, nv_type: 'Supraclavicular', nv_inserted_date: '', nv_inserted_time: '',
@@ -68,7 +76,8 @@ export function patientToForm(p: PatientFull): PatientFormValues {
   const s = (v: string | null | undefined) => v ?? ''
   return {
     full_name: p.full_name, age: p.age == null ? '' : String(p.age), sex: s(p.sex), bht: p.bht, ward: p.ward,
-    category: p.category, category_note: s(p.category_note), surgery: s(p.surgery), indication: s(p.indication),
+    category: p.category, category_note: s(p.category_note),     pdph_level: s(p.pdph_level), pdph_needle: s(p.pdph_needle), pdph_attempts: p.pdph_attempts == null ? '' : String(p.pdph_attempts),
+    pdph_symptoms: s(p.pdph_symptoms), pdph_complaint: s(p.pdph_complaint), pdph_condition: s(p.pdph_condition), pdph_management: s(p.pdph_management), surgery: s(p.surgery), indication: s(p.indication),
     surgery_date: s(p.surgery_date), surgery_time: hhmm(p.surgery_time), anaesthesia_mode: s(p.anaesthesia_mode),
     has_epidural: p.has_epidural, ep_level: s(p.ep_level), ep_inserted_date: s(p.ep_inserted_date),
     ep_inserted_time: hhmm(p.ep_inserted_time), ep_test_dose: s(p.ep_test_dose),
@@ -96,6 +105,14 @@ const patientSchema = z
     ward: z.string().min(1, 'Ward is required').max(60),
     category: z.enum(CATEGORIES),
     category_note: text(1000),
+    pdph_level: text(60),
+    pdph_needle: text(100),
+    pdph_attempts: z.number('Attempts must be a number').int('Attempts must be a whole number')
+      .min(1, 'Attempts must be between 1 and 20').max(20, 'Attempts must be between 1 and 20').nullable(),
+    pdph_symptoms: text(2000),
+    pdph_complaint: text(2000),
+    pdph_condition: text(2000),
+    pdph_management: text(2000),
     surgery: text(),
     indication: text(),
     surgery_date: date,
@@ -159,9 +176,16 @@ export function buildPatient(f: PatientFormValues): BuildResult<PatientBuild> {
   const ep = f.has_epidural
   const nv = f.has_nerve_catheter
   const pca = f.has_pca
+  const pd = f.category === 'PDPH'
+  const attText = f.pdph_attempts.trim()
+  const attempts = !pd || attText === '' ? null : /^\d+$/.test(attText) ? Number(attText) : Number.NaN
+  const hasNote = (NOTE_CATEGORIES as readonly string[]).includes(f.category)
   const candidate = {
     full_name: f.full_name.trim(), bht: f.bht.trim(), age, sex: f.sex || null, ward: f.ward.trim(),
-    category: f.category, category_note: blank(f.category_note),
+    category: f.category, category_note: hasNote ? blank(f.category_note) : null,
+    pdph_level: pd ? blank(f.pdph_level) : null, pdph_needle: pd ? blank(f.pdph_needle) : null, pdph_attempts: attempts,
+    pdph_symptoms: pd ? blank(f.pdph_symptoms) : null, pdph_complaint: pd ? blank(f.pdph_complaint) : null,
+    pdph_condition: pd ? blank(f.pdph_condition) : null, pdph_management: pd ? blank(f.pdph_management) : null,
     surgery: blank(f.surgery), indication: blank(f.indication),
     surgery_date: f.surgery_date || null, surgery_time: f.surgery_time || null,
     anaesthesia_mode: f.anaesthesia_mode || null,

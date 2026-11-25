@@ -8,6 +8,7 @@ import { isUrgent } from './filters'
 import { isActiveMed } from '../../lib/meds'
 import { isOpen, needsMyAck } from '../../lib/alerts'
 import { useAuth } from '../auth/AuthProvider'
+import { categoryLine } from '../../lib/category'
 
 function Tile({ label, value }: { label: string; value: number | null | undefined }) {
   if (value == null) {
@@ -56,7 +57,7 @@ export function PatientCard({ patient: p, nameOf }: { patient: PatientFull; name
       {p.category !== 'Surgery' && (
         <div className="row wrap" style={{ marginTop: 8 }}>
           <Tag tone="info">{p.category}</Tag>
-          {p.category_note && <span className="faint">{p.category_note}</span>}
+          {categoryLine(p) && <span className="faint">{categoryLine(p)}</span>}
         </div>
       )}
 

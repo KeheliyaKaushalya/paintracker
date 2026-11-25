@@ -1,6 +1,11 @@
 // Allowed values. They MUST match the check constraints in supabase/migrations.
 
-export const CATEGORIES = ['Surgery', 'Difficult airway', 'Anaphylaxis', 'Medical issue', 'Other'] as const
+export const CATEGORIES = ['Surgery', 'PDPH', 'Rib fracture', 'Difficult airway', 'Anaphylaxis', 'Medical issue', 'Other'] as const
+/** Categories that get a free-text "Details" box. */
+export const NOTE_CATEGORIES = ['Difficult airway', 'Anaphylaxis', 'Medical issue', 'Other'] as const
+export const PDPH_TECHNIQUES = ['Spinal', 'CSE'] as const
+export const SPINAL_LEVELS = ['L1-L2', 'L2-L3', 'L3-L4', 'L4-L5', 'L5-S1']
+export const NEEDLE_SUGGESTIONS = ['22G Quincke', '25G Quincke', '26G Quincke', '27G Quincke', '25G Whitacre', '27G Whitacre', '25G Sprotte']
 export const WARDS_DEFAULT = ['7A', '23B', '39', 'OT Complex', 'ICU', 'Other'] as const
 export const SEXES = ['M', 'F'] as const
 export const ANAESTHESIA_MODES = ['GA', 'Spinal', 'CSE', 'Regional'] as const

@@ -12,6 +12,7 @@ import { ackAlert, addAlert, dischargePatient, readmitPatient, resolveAlert, del
 import { useNameLookup, usePatient } from './hooks'
 import { MedSection } from './Medsection'
 import { needsMyAck } from '../../lib/alerts'
+import { pdphTechnique } from '../../lib/category'
 
 const PainChart = lazy(() => import('../rounds/PainChart'))
 
@@ -225,6 +226,19 @@ export function PatientDetailPage() {
         <h2 className="section-title" id="sum-h">Clinical summary</h2>
         <div className="card">
           <dl className="info-grid" style={{ margin: 0 }}>
+            {p.category === 'PDPH' && (
+              <>
+                <Info label="PDPH technique">{pdphTechnique(p)}</Info>
+                <Info label="PDPH level">{p.pdph_level}</Info>
+                <Info label="Needle">{p.pdph_needle}</Info>
+                <Info label="Attempts">{p.pdph_attempts != null ? String(p.pdph_attempts) : ''}</Info>
+                <Info label="Symptoms">{p.pdph_symptoms}</Info>
+                <Info label="Presenting complaint">{p.pdph_complaint}</Info>
+                <Info label="Current condition">{p.pdph_condition}</Info>
+                <Info label="Management">{p.pdph_management}</Info>
+              </>
+            )}
+            
             <Info label="Surgery">{p.surgery}</Info>
             <Info label="Surgery date">{p.surgery_date ? `${fmtDateLong(p.surgery_date)}${p.surgery_time ? ` ${hhmm(p.surgery_time)}` : ''}` : ''}</Info>
             <Info label="Indication">{p.indication}</Info>

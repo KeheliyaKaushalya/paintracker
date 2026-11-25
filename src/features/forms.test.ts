@@ -103,8 +103,26 @@ describe('patient form', () => {
   it('rejects an unknown drug', () => {
     expect(buildPatient({ ...ok(), meds: [{ ...newMedRow(), drug: 'Aspirin' }] }).ok).toBe(false)
   })
-    it('accepts the Daily frequency', () => {
+  it('accepts the Daily frequency', () => {
     const r = buildPatient({ ...ok(), meds: [{ ...newMedRow(), freq: 'Daily' }] })
     expect(r.ok).toBe(true)
+  })
+  it('keeps PDPH details only for the PDPH category', () => {
+    const pd = { ...ok(), category: 'PDPH', anaesthesia_mode: 'Spinal', pdph_level: 'L3-L4', pdph_needle: '25G Whitacre', pdph_attempts: '2', pdph_symptoms: 'postural headache' }
+    const r = buildPatient(pd)
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.value.patient).toMatchObject({ category: 'PDPH', anaesthesia_mode: 'Spinal', pdph_level: 'L3-L4', pdph_needle: '25G Whitacre', pdph_attempts: 2 })
+    const other = buildPatient({ ...pd, category: 'Rib fracture' })
+    expect(other.ok && other.value.patient.pdph_level).toBeNull()
+    expect(other.ok && other.value.patient.pdph_attempts).toBeNull()
+  })
+  it('rejects impossible PDPH attempt counts', () => {
+    for (const pdph_attempts of ['0', '21', 'abc', '1.5']) expect(buildPatient({ ...ok(), category: 'PDPH', pdph_attempts }).ok).toBe(false)
+  })
+  it('only keeps the details note for note categories', () => {
+    const r = buildPatient({ ...ok(), category: 'Rib fracture', category_note: 'ignored' })
+    expect(r.ok && r.value.patient.category_note).toBeNull()
+    const n = buildPatient({ ...ok(), category: 'Medical issue', category_note: 'kept' })
+    expect(n.ok && n.value.patient.category_note).toBe('kept')
   })
 })

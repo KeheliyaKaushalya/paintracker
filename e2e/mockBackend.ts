@@ -38,9 +38,12 @@ const patientDefaults: Row = {
   has_nerve_catheter: false, nv_type: null, nv_inserted_date: null, nv_inserted_time: null, has_pca: false, pca_drug: null,
   pca_bolus: null, pca_lockout: null, pca_max_hr: null, status: 'active', discharged_date: null, category: 'Surgery',
   created_by: ME, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+  deleted_at: null, deleted_by: null, delete_reason: null,
+  pdph_level: null, pdph_needle: null, pdph_attempts: null, pdph_symptoms: null, pdph_complaint: null, pdph_condition: null, pdph_management: null,
 }
 const roundDefaults: Row = {
-  round_time: null, session: null, pain_rest: null, pain_move: null, rr: null, spo2: null, hr: null, bp_sys: null, bp_dia: null,
+  round_time: null, session: null, pain_rest: null, pain_move: null, pain_cough: null, pain_physio: null,
+  rr: null, spo2: null, hr: null, bp_sys: null, bp_dia: null,
   gcs: null, mobilization: null, tags: [], note: null, amended_of: null, created_by: ME,
 }
 
@@ -57,10 +60,12 @@ export function freshState(): MockState {
       { ...patientDefaults, id: P2, bht: 'DEMO/0002', full_name: 'Demo Patient Two', age: 47, sex: 'F', ward: '23B', surgery: 'Shoulder arthroscopy', surgery_date: daysAgo(1) },
     ],
     meds: [
-      { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1', patient_id: P1, sort_order: 0, drug: 'Paracetamol', route: 'IV', dose: '1 g', freq: 'Every 6h', freq_custom: null, dosing: 'single', topup: null },
+      { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1', patient_id: P1, sort_order: 0, drug: 'Paracetamol', route: 'IV', dose: '1 g', freq: 'Every 6h', freq_custom: null, dosing: 'single', topup: null,
+        status: 'active', started_at: null, started_by: null, ended_at: null, ended_by: null, end_reason: null },
     ],
     alerts: [
-      { id: 'cccccccc-cccc-4ccc-8ccc-ccccccccccc1', patient_id: P1, alert_text: 'Keep catheter until reviewed', created_by: ME, created_at: new Date().toISOString() },
+      { id: 'cccccccc-cccc-4ccc-8ccc-ccccccccccc1', patient_id: P1, alert_text: 'Keep catheter until reviewed', created_by: ME, created_at: new Date().toISOString(),
+        resolved_at: null, resolved_by: null, patient_alert_acks: [] },
     ],
     rounds: [
       { ...roundDefaults, id: 'dddddddd-dddd-4ddd-8ddd-ddddddddddd1', patient_id: P1, kind: 'pain', round_date: daysAgo(2), round_time: '08:00:00', session: 'Morning', pain_rest: 2, pain_move: 5, created_at: '2026-01-01T01:00:00Z' },
@@ -75,6 +80,10 @@ const jwt = () => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: ME, role: '
 const user = (email: string) => ({ id: ME, aud: 'authenticated', role: 'authenticated', email, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() })
 
 export async function installMockBackend(page: Page, state: MockState) {
+  // tables the app reads or writes that the tests do not need to fill with data
+  const extra: Record<string, Row[]> = {
+    patient_med_changes: [], patient_alert_acks: [], wards: [], shift_templates: [], shift_assignments: [], export_log: [],
+  }
   await page.routeWebSocket(/\/realtime\//, () => { /* realtime is not simulated */ })
 
   await page.route(/mock\.supabase\.test/, async (route: Route) => {
@@ -110,7 +119,10 @@ export async function installMockBackend(page: Page, state: MockState) {
 
     // ----- rest -----
     const table = url.pathname.replace('/rest/v1/', '')
-    const tables: Record<string, Row[]> = { profiles: state.profiles, patients: state.patients, patient_meds: state.meds, patient_alerts: state.alerts, rounds: state.rounds }
+    const tables: Record<string, Row[]> = {
+      profiles: state.profiles, patients: state.patients, patient_meds: state.meds, patient_alerts: state.alerts, rounds: state.rounds,
+      ...extra,
+    }    
     const rows = tables[table]
     if (!rows) return json(404, { code: 'PGRST205', message: `unknown table ${table}` })
 
@@ -119,6 +131,10 @@ export async function installMockBackend(page: Page, state: MockState) {
     const matches = (r: Row) => filters.every(([k, v]) => {
       if (v.startsWith('eq.')) return String(r[k]) === v.slice(3)
       if (v.startsWith('in.(')) return v.slice(4, -1).split(',').includes(String(r[k]))
+      if (v === 'is.null') return r[k] == null
+      if (v === 'not.is.null') return r[k] != null
+      if (v.startsWith('gte.')) return String(r[k]) >= v.slice(4)
+      if (v.startsWith('lte.')) return String(r[k]) <= v.slice(4)
       throw new Error(`mock: unsupported filter ${k}=${v}`)
     })
 
@@ -129,8 +145,7 @@ export async function installMockBackend(page: Page, state: MockState) {
         out = out.map((p) => ({
           ...p,
           ...(select.includes('patient_meds') ? { patient_meds: state.meds.filter((m) => m.patient_id === p.id) } : {}),
-          ...(select.includes('patient_alerts') ? { patient_alerts: state.alerts.filter((a) => a.patient_id === p.id) } : {}),
-        }))
+          ...(select.includes('patient_alerts') ? { patient_alerts: state.alerts.filter((a) => a.patient_id === p.id).map((a) => ({ ...a, patient_alert_acks: a.patient_alert_acks ?? [] })) } : {}),        }))
       }
       return json(200, out)
     }
@@ -148,7 +163,9 @@ export async function installMockBackend(page: Page, state: MockState) {
         } else if (table === 'rounds') {
           rows.push({ ...roundDefaults, ...it, created_at: new Date().toISOString() })
         } else if (table === 'patient_alerts') {
-          rows.push({ ...it, id: it.id ?? crypto.randomUUID(), created_at: new Date().toISOString() })
+          rows.push({ resolved_at: null, resolved_by: null, ...it, id: it.id ?? crypto.randomUUID(), created_at: new Date().toISOString() })
+        } else if (table === 'patient_meds') {
+          rows.push({ status: 'active', started_at: null, started_by: null, ended_at: null, ended_by: null, end_reason: null, ...it, id: it.id ?? crypto.randomUUID() })
         } else {
           rows.push({ ...it, id: it.id ?? crypto.randomUUID() })
         }

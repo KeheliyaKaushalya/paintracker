@@ -5,7 +5,7 @@ import { Icon } from '../../components/Icon'
 import { useToast } from '../../components/Toast'
 import { Empty, ErrorBox, Field, Spinner } from '../../components/ui'
 import {
-  ANAESTHESIA_MODES, CATEGORIES, EPIDURAL_LEVELS, MED_DRUGS, MED_FREQS, MED_ROUTES, NERVE_TYPES, SEXES, WARDS_DEFAULT,
+  ANAESTHESIA_MODES, CATEGORIES, EPIDURAL_LEVELS, MED_DRUGS, MED_FREQS, MED_ROUTES, NERVE_TYPES, SEXES, WARDS_DEFAULT, NEEDLE_SUGGESTIONS, NOTE_CATEGORIES, PDPH_TECHNIQUES, SPINAL_LEVELS
 } from '../../lib/constants'
 import { friendlyMessage } from '../../lib/errors'
 import { useAuth } from '../auth/AuthProvider'
@@ -134,7 +134,7 @@ function PatientForm({ initial, patientId, existingMedIds }: { initial: PatientF
 
       <Section title="Patient category">
         <Choice label="Category" value={f.category} options={CATEGORIES} onChange={(v) => set('category', v || 'Surgery')} />
-        {f.category !== 'Surgery' && (
+        {(NOTE_CATEGORIES as readonly string[]).includes(f.category) && (
           <Field id="category_note" label="Details" error={err('category_note')}>
             <textarea id="category_note" className="input" value={f.category_note} onChange={(e) => set('category_note', e.target.value)} />
           </Field>
@@ -159,7 +159,41 @@ function PatientForm({ initial, patientId, existingMedIds }: { initial: PatientF
         <Choice label="Anaesthesia" value={f.anaesthesia_mode} options={ANAESTHESIA_MODES} onChange={(v) => set('anaesthesia_mode', v)} />
       </Section>
 
-      <Section title="Pain management" open={f.has_epidural || f.has_nerve_catheter || f.has_pca || f.meds.length > 0}>
+      {f.category === 'PDPH' && (
+        <Section title="Post-dural puncture headache (PDPH)" open>
+          <Choice label="Technique" value={f.anaesthesia_mode} options={PDPH_TECHNIQUES} onChange={(v) => set('anaesthesia_mode', v)} />
+          {f.anaesthesia_mode !== 'Spinal' && f.anaesthesia_mode !== 'CSE' && (
+            <span className="hint">Choose the technique used for the dural puncture.</span>
+          )}
+          <div className="row2">
+            <Field id="pdph_level" label="Level" error={err('pdph_level')}>
+              <input id="pdph_level" className="input" list="pdph-levels" autoComplete="off" placeholder="e.g. L3-L4" value={f.pdph_level} onChange={(e) => set('pdph_level', e.target.value)} />
+              <datalist id="pdph-levels">{SPINAL_LEVELS.map((l) => <option key={l} value={l} />)}</datalist>
+            </Field>
+            <Field id="pdph_needle" label="Needle used" error={err('pdph_needle')}>
+              <input id="pdph_needle" className="input" list="pdph-needles" autoComplete="off" placeholder="e.g. 25G Whitacre" value={f.pdph_needle} onChange={(e) => set('pdph_needle', e.target.value)} />
+              <datalist id="pdph-needles">{NEEDLE_SUGGESTIONS.map((n) => <option key={n} value={n} />)}</datalist>
+            </Field>
+          </div>
+          <Field id="pdph_attempts" label="Number of attempts" error={err('pdph_attempts')}>
+            <input id="pdph_attempts" className="input" inputMode="numeric" pattern="[0-9]*" autoComplete="off" aria-invalid={bad('pdph_attempts')} placeholder="e.g. 2" value={f.pdph_attempts} onChange={(e) => set('pdph_attempts', e.target.value)} />
+          </Field>
+          <Field id="pdph_symptoms" label="Symptoms" error={err('pdph_symptoms')}>
+            <textarea id="pdph_symptoms" className="input" placeholder="e.g. postural headache, neck stiffness, nausea" value={f.pdph_symptoms} onChange={(e) => set('pdph_symptoms', e.target.value)} />
+          </Field>
+          <Field id="pdph_complaint" label="Presenting complaint" error={err('pdph_complaint')}>
+            <textarea id="pdph_complaint" className="input" placeholder="Why the patient was referred / what they complained of" value={f.pdph_complaint} onChange={(e) => set('pdph_complaint', e.target.value)} />
+          </Field>
+          <Field id="pdph_condition" label="Current condition" error={err('pdph_condition')}>
+            <textarea id="pdph_condition" className="input" placeholder="Current status on review" value={f.pdph_condition} onChange={(e) => set('pdph_condition', e.target.value)} />
+          </Field>
+          <Field id="pdph_management" label="Management" error={err('pdph_management')}>
+            <textarea id="pdph_management" className="input" placeholder="Treatment given / plan" value={f.pdph_management} onChange={(e) => set('pdph_management', e.target.value)} />
+          </Field>
+        </Section>
+      )}
+
+      <Section title="Pain management" open={f.has_epidural || f.has_nerve_catheter || f.has_pca || f.meds.length > 0 || f.category === 'PDPH' || f.category === 'Rib fracture'}>
         <div className="stack-s">
           <span className="label">Techniques in use</span>
           <div className="chips">

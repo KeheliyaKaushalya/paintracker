@@ -278,6 +278,20 @@ begin
     $q$insert into public.export_log (kind, row_count) values ('patients_csv', 1)$q$) = 'ok', 'an admin export is logged');
   perform pg_temp.check_that(pg_temp.count_as(nurse_id, 'select count(*) from public.export_log') = 0, 'a nurse cannot read the export log');
 
+  -- ---- 015: soft delete ----
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id,
+    format($q$update public.patients set deleted_at = now(), delete_reason = 'x' where id = '%s'$q$, pid)) like 'error%',
+    'a nurse cannot delete a patient record');
+  perform pg_temp.run_as(admin_id,
+    format($q$update public.patients set deleted_at = now(), delete_reason = 'Entered twice' where id = '%s'$q$, pid));
+  perform pg_temp.check_that((select deleted_by from public.patients where id = pid) = admin_id, 'an admin can delete a record and it records who');
+  perform pg_temp.check_that(pg_temp.run_as(nurse_id,
+    format($q$update public.patients set deleted_at = null, delete_reason = null where id = '%s'$q$, pid)) like 'error%',
+    'a nurse cannot restore a record');
+  perform pg_temp.run_as(admin_id,
+    format($q$update public.patients set deleted_at = null, delete_reason = null where id = '%s'$q$, pid));
+  perform pg_temp.check_that((select deleted_at from public.patients where id = pid) is null, 'an admin can restore a record');
+
   -- ---- roles, approval and the audit log ----
   perform pg_temp.run_as(nurse_id, format($q$update public.profiles set role = 'admin', active = true where id = '%s'$q$, nurse_id));
   perform pg_temp.check_that((select role from public.profiles where id = nurse_id) = 'nurse',

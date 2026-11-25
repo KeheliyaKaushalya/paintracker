@@ -8,7 +8,7 @@ type WithoutRounds = Omit<PatientFull, 'rounds'>
 
 /** All patients with a given status, with their medications, alerts and rounds. */
 export async function fetchPatients(status: 'active' | 'discharged'): Promise<PatientFull[]> {
-  const base = supabase.from('patients').select('*, patient_meds(*), patient_alerts(*, patient_alert_acks(user_id))').eq('status', status)
+  const base = supabase.from('patients').select('*, patient_meds(*), patient_alerts(*, patient_alert_acks(user_id))').eq('status', status).is('deleted_at', null)
   const { data, error } =
     status === 'active'
       ? await base.order('ward').order('full_name')
@@ -144,4 +144,19 @@ export async function addWard(name: string): Promise<void> {
 export async function setWardActive(id: string, active: boolean): Promise<void> {
   const { error } = await supabase.from('wards').update({ active }).eq('id', id)
   if (error) throw toError(error)
+}
+export async function deletePatient(id: string, reason: string): Promise<void> {
+  const { error } = await supabase.from('patients').update({ deleted_at: new Date().toISOString(), delete_reason: reason.trim() }).eq('id', id)
+  if (error) throw toError(error)
+}
+
+export async function restorePatient(id: string): Promise<void> {
+  const { error } = await supabase.from('patients').update({ deleted_at: null, deleted_by: null, delete_reason: null }).eq('id', id)
+  if (error) throw toError(error)
+}
+
+export async function fetchDeletedPatients(): Promise<PatientFull[]> {
+  const { data, error } = await supabase.from('patients').select('*').not('deleted_at', 'is', null).order('deleted_at', { ascending: false })
+  if (error) throw toError(error)
+  return ((data ?? []) as unknown as Omit<PatientFull, 'patient_meds' | 'patient_alerts' | 'rounds'>[]).map((p) => ({ ...p, patient_meds: [], patient_alerts: [], rounds: [] }))
 }

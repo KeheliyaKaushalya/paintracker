@@ -3,12 +3,12 @@ import { lazy, Suspense, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
 import { useToast } from '../../components/Toast'
-import { AlertBanner, ConfirmDialog, Empty, ErrorBox, Spinner, Tag } from '../../components/ui'
+import { AlertBanner, ConfirmDialog, Empty, ErrorBox, Spinner, Tag, PromptDialog} from '../../components/ui'
 import { computePOD, fmtDate, fmtDateLong, fmtStamp, hhmm } from '../../lib/dates'
 import { effectiveRounds, newestFirst } from '../../lib/rounds'
 import { useAuth } from '../auth/AuthProvider'
 import { RoundItem } from '../rounds/RoundItem'
-import { ackAlert, addAlert, dischargePatient, readmitPatient, resolveAlert } from './api'
+import { ackAlert, addAlert, dischargePatient, readmitPatient, resolveAlert, deletePatient, restorePatient, } from './api'
 import { useNameLookup, usePatient } from './hooks'
 import { MedSection } from './Medsection'
 import { needsMyAck } from '../../lib/alerts'
@@ -28,7 +28,7 @@ export function PatientDetailPage() {
   const { id } = useParams()
   const q = usePatient(id)
   const nameOf = useNameLookup()
-  const { session } = useAuth()
+  const { session, profile } = useAuth()
   const qc = useQueryClient()
   const toast = useToast()
   const navigate = useNavigate()
@@ -37,6 +37,8 @@ export function PatientDetailPage() {
   const [alertText, setAlertText] = useState('')
   const [addingAlert, setAddingAlert] = useState(false)
   const [resolving, setResolving] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const p = q.data
   const rounds = useMemo(() => (p ? effectiveRounds(p.rounds).sort(newestFirst) : []), [p])
@@ -108,6 +110,34 @@ export function PatientDetailPage() {
     }
   }
 
+    async function doDelete(reason: string) {
+    setBusy(true)
+    setDeleteError(null)
+    try {
+      await deletePatient(p!.id, reason)
+      await qc.invalidateQueries()
+      toast('Record deleted. An administrator can restore it.')
+      navigate('/')
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : 'Could not delete the record')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function doRestore() {
+    setBusy(true)
+    try {
+      await restorePatient(p!.id)
+      await qc.invalidateQueries()
+      toast('Record restored')
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Could not restore the record', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="stack">
       <div className="row between">
@@ -117,6 +147,9 @@ export function PatientDetailPage() {
           <button className="iconbtn" onClick={() => setConfirm(active ? 'discharge' : 'readmit')} aria-label={active ? 'Discharge patient' : 'Return to board'}>
             <Icon name="check" />
           </button>
+          {profile?.role === 'admin' && !p.deleted_at && (
+            <button className="iconbtn" onClick={() => { setDeleteError(null); setDeleting(true) }} aria-label="Delete record"><Icon name="trash" /></button>
+          )}
         </div>
       </div>
 
@@ -126,6 +159,13 @@ export function PatientDetailPage() {
           {[p.age != null ? `${p.age} yrs` : null, p.sex].filter(Boolean).join(' · ')}
           {(p.age != null || p.sex) && ' · '}<span className="mono">{p.bht}</span>
         </p>
+        {p.deleted_at && (
+          <div className="error-box stack-s" role="status" style={{ marginTop: 8 }}>
+            <strong>This record was deleted</strong>
+            <span>{p.delete_reason} · {nameOf(p.deleted_by ?? '')} · {fmtStamp(p.deleted_at)}</span>
+            {profile?.role === 'admin' && <button className="btn btn-outline btn-sm" style={{ alignSelf: 'flex-start' }} disabled={busy} onClick={() => void doRestore()}>Restore record</button>}
+          </div>
+        )}
         <div className="row wrap" style={{ marginTop: 8 }}>
           <Tag tone="primary">{p.ward}</Tag>
           {p.category !== 'Surgery' && <Tag tone="info">{p.category}</Tag>}
@@ -239,6 +279,20 @@ export function PatientDetailPage() {
           busy={busy}
           onCancel={() => setResolving(null)}
           onConfirm={() => void confirmResolve()}
+        />
+      )}
+      {deleting && (
+        <PromptDialog
+          title="Delete this patient record?"
+          message="It disappears from the board and lists but is kept in full. Only an administrator can restore it."
+          label="Reason"
+          required
+          confirmLabel="Delete record"
+          danger
+          busy={busy}
+          error={deleteError}
+          onCancel={() => setDeleting(false)}
+          onConfirm={(reason) => void doDelete(reason)}
         />
       )}
     </div>

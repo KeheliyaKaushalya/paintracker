@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
-import { fetchMedChanges, fetchPatient, fetchPatients, fetchProfiles, fetchWards } from './api'
+import { fetchMedChanges, fetchPatient, fetchPatients, fetchProfiles, fetchWards, fetchDeletedPatients} from './api'
 
 export const usePatients = (status: 'active' | 'discharged') =>
   useQuery({ queryKey: ['patients', status], queryFn: () => fetchPatients(status) })
@@ -11,6 +11,8 @@ export const usePatient = (id: string | undefined) =>
 export const useProfiles = () => useQuery({ queryKey: ['profiles'], queryFn: fetchProfiles })
 
 export const useWards = () => useQuery({ queryKey: ['wards'], queryFn: fetchWards })
+
+export const useDeletedPatients = () => useQuery({ queryKey: ['patients', 'deleted'], queryFn: fetchDeletedPatients })
 
 /** id -> name, so "recorded by" can show who. */
 export function useNameLookup(): (id: string) => string {

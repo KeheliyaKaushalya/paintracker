@@ -7,6 +7,7 @@ import { Icon } from './Icon'
 import { OutboxBanner } from './OutboxBanner'
 import { UpdatePrompt } from './UpdatePrompt'
 import { useShiftNotices } from '../features/shifts/useShiftNotices'
+import { useLayoutEffect } from 'react'
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -17,6 +18,14 @@ export function Layout() {
   const { profile, session } = useAuth()
   const theme = useTheme()
   const location = useLocation()
+  useLayoutEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant'
+  })
+}, [location.pathname])
+
   useIdleLogout()
   useRealtimeSync(true)
   useOutboxFlusher(session?.user.id)
@@ -61,7 +70,10 @@ export function Layout() {
 
       {onBoard && (
         <div className="fab-wrap">
-          <Link to="/patients/new" className="fab" aria-label="Add patient"><Icon name="plus" /></Link>
+          <Link to="/patients/new" className="fab" aria-label="Add patient">
+          <Icon name="plus" />
+            <span>New Patient</span>
+          </Link>
         </div>
       )}
 

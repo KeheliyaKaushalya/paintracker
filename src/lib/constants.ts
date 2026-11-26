@@ -23,7 +23,7 @@ export const ROUND_TAGS = [
   'Top-up given', 'Line removed', 'Dose changed', 'Catheter concern', 'Discharge planned', 'Urgent review',
 ] as const
 
-export const ROLES = ['nurse', 'resident', 'consultant', 'admin'] as const
+export const ROLES = ['Nurse', 'Resident', 'Consultant', 'Admin'] as const
 
 /** Epidural level suggestions for the type-ahead list (free text is also allowed). */
 export const EPIDURAL_LEVELS: string[] = (() => {

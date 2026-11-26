@@ -40,15 +40,3 @@ e2e/                   browser tests + the pretend backend
 public/                icons and security headers (_headers)
 docs/                  SETUP.md, SECURITY.md, DECISIONS.md
 ```
-
-Known limits
-
-- Only **rounds** can be saved while offline. Adding or editing a patient needs a connection.
-- Creating or editing a patient is several requests, not one transaction. If a later step fails
-  you get a clear warning and can fix it with Edit.
-- Two people editing the **same patient record** at the same moment: the last save wins
-  (rounds and alerts are separate rows, so those never overwrite each other).
-- Roles (nurse / resident / consultant) are labels for now. Only **admin** has extra powers.
-- The board loads every active patient and their rounds in one go. Fine for tens of patients;
-  it would need paging for hundreds.
-- No push notifications or fingerprint login

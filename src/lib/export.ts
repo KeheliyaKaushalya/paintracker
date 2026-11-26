@@ -4,7 +4,7 @@ export type Cell = string | number | null | undefined
 
 /** Stops spreadsheet programs from running a note that starts with = + - or @ as a formula. */
 function safe(v: string): string {
-  return /^[=+\-@\t\r]/.test(v) ? `'${v}` : v
+  return /^[\s]*[=+\-@]|^[\t\r]/.test(v) ? `'${v}` : v
 }
 
 export function toCsv(rows: Cell[][]): string {

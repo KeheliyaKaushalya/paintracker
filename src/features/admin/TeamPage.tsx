@@ -1,17 +1,18 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { WardsPanel, ExportsPanel, AccountTools } from './Panels'
+import { ShiftTemplatesAdmin } from './ShiftTemplatesAdmin'
 import { useToast } from '../../components/Toast'
-import { Empty, ErrorBox, Spinner, Tag } from '../../components/ui'
+import { Empty, ErrorBox, Spinner, Tag, Segmented } from '../../components/ui'
 import { ROLES } from '../../lib/constants'
 import type { Profile, Role } from '../../lib/models'
 import { useAuth } from '../auth/AuthProvider'
 import { updateProfile } from '../patients/api'
 import { useProfiles } from '../patients/hooks'
-import { WardsAdmin } from './WardsAdmin'
-import { ShiftTemplatesAdmin } from './ShiftTemplatesAdmin'
-import { Link } from 'react-router-dom'
+import { InviteUserForm } from './InviteUserForm' // NEW
 
-export function TeamPage() {
+function Accounts() {
   const q = useProfiles()
   const { profile: me } = useAuth()
   const qc = useQueryClient()
@@ -36,22 +37,17 @@ export function TeamPage() {
 
   return (
     <div>
-      <div className="page-head">
-        <div>
-          <h1>Team</h1>
-          <p className="muted">Approve new users, set roles, and switch off people who have left.</p>
-        </div>
+      <div style={{ marginBottom: 14 }}>
+        <InviteUserForm />
       </div>
-      <div className="row wrap" style={{ marginBottom: 12 }}>
-        <Link to="/export" className="btn btn-outline btn-sm">Export data</Link>
-      </div>
+
       {q.isLoading && <Spinner />}
       {q.error && <ErrorBox error={q.error} onRetry={() => void q.refetch()} />}
       {q.data && q.data.length === 0 && <Empty title="No users yet" />}
 
       {pending.length > 0 && (
         <>
-          <h2 className="section-title">Waiting for approval ({pending.length})</h2>
+          <h2 className="section-title">Waiting for Approval ({pending.length})</h2>
           <div className="card">
             {pending.map((p) => (
               <div className="user-row" key={p.id}>
@@ -87,8 +83,19 @@ export function TeamPage() {
           You can't change your own role or deactivate yourself, so there is always one admin. The moment someone is deactivated the server stops giving them any patient data, and their screen follows within about two minutes.
         </p>
       </div>
-      <WardsAdmin/>
-      <ShiftTemplatesAdmin/>
     </div>
   )
+}
+
+export function TeamPage() {
+  const [params, setParams] = useSearchParams()
+  const requested = params.get('tab')
+  const tab = requested === 'wards' || requested === 'exports' ? requested : 'team'
+  return <div className="stack">
+    <div className="page-head"><div><h1>Team</h1><p className="muted">Accounts, wards and exports</p></div></div>
+    <Segmented<'team' | 'wards' | 'exports'> value={tab} onChange={value => setParams({tab:value})} label="Team sections" options={[{value:'team',label:'Team'},{value:'wards',label:'Wards'},{value:'exports',label:'Exports'}]} />
+    {tab === 'team' && <><Accounts/><AccountTools/><ShiftTemplatesAdmin/><Link className="btn btn-outline" to="/deleted">Deleted patients</Link></>}
+    {tab === 'wards' && <WardsPanel/>}
+    {tab === 'exports' && <ExportsPanel/>}
+  </div>
 }

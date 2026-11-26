@@ -3,6 +3,7 @@ import { todayISO } from '../../lib/dates'
 import type { MedChange, PatientFull, Profile, Role, Round, Ward } from '../../lib/models'
 import { supabase } from '../../lib/supabase'
 import type { PatientBuild } from './schemas'
+import { FunctionsHttpError } from '@supabase/supabase-js'
 
 type WithoutRounds = Omit<PatientFull, 'rounds'>
 
@@ -185,4 +186,17 @@ export async function fetchDeletedPatients(): Promise<PatientFull[]> {
   const { data, error } = await supabase.from('patients').select('*').not('deleted_at', 'is', null).order('deleted_at', { ascending: false })
   if (error) throw toError(error)
   return ((data ?? []) as unknown as Omit<PatientFull, 'patient_meds' | 'patient_alerts' | 'rounds'>[]).map((p) => ({ ...p, patient_meds: [], patient_alerts: [], rounds: [] }))
+}
+
+export async function inviteUser(input: { email: string; full_name: string; role: Role }): Promise<void> {
+  const { error } = await supabase.functions.invoke('invite-user', {
+    body: { ...input, redirectTo: `${window.location.origin}/set-password` },
+  })
+  if (error) {
+    if (error instanceof FunctionsHttpError) {
+      const body = await error.context.json().catch(() => null)
+      throw new Error(body?.error ?? 'Could not send the invite')
+    }
+    throw toError(error)
+  }
 }

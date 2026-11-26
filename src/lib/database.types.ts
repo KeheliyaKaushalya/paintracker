@@ -256,6 +256,7 @@ export type Database = {
     }
     Views: { [_ in never]: never }
     Functions: {
+      log_export: { Args: { description: string; export_kind: string; row_count: number }; Returns: undefined }
       change_med_dose: { Args: { p_med: string; p_dose: string; p_freq: string; p_freq_custom: string; p_reason: string }; Returns: undefined }
       end_med: { Args: { p_med: string; p_status: string; p_reason: string }; Returns: undefined }
     }

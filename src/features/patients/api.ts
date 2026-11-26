@@ -111,6 +111,32 @@ export async function endMed(medId: string, status: 'stopped' | 'removed', reaso
   if (error) throw toError(error)
 }
 
+export interface NewMed {
+  drug: string
+  route: string
+  dose: string
+  freq: string
+  freq_custom: string
+  topup: string
+}
+
+/** Adds one medication to an existing patient (used by the chart's inline "Add medication" form). */
+export async function addMed(patientId: string, m: NewMed, sortOrder: number): Promise<void> {
+  const { error } = await supabase.from('patient_meds').insert({
+    id: crypto.randomUUID(),
+    patient_id: patientId,
+    drug: m.drug,
+    route: m.route,
+    dose: m.dose || null,
+    freq: m.freq || null,
+    freq_custom: m.freq === 'Other' ? m.freq_custom || null : null,
+    topup: m.topup || null,
+    sort_order: sortOrder,
+    // dosing: 'maintenance',   <- only needed if the column is NOT NULL with no default (see Step 6)
+  })
+  if (error) throw toError(error)
+}
+
 export async function fetchMedChanges(patientId: string): Promise<MedChange[]> {
   const { data, error } = await supabase.from('patient_med_changes').select('*').eq('patient_id', patientId).order('changed_at', { ascending: false })
   if (error) throw toError(error)

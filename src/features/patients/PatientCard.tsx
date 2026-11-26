@@ -77,7 +77,7 @@ export function PatientCard({ patient: p, nameOf }: { patient: PatientFull; name
             <tbody>
               {meds.slice(0, 3).map((m) => (
                 <tr key={m.id}>
-                  <td><strong>{m.drug}</strong></td><td>{m.route}</td><td>{m.dose ?? '—'}</td>
+                  <td><strong>{m.drug}</strong></td><td>{m.route}</td><td><strong>{m.dose ?? '—'}</strong></td>
                   <td>{m.freq === 'Other' ? m.freq_custom || 'Other' : m.freq ?? '—'}</td>
                 </tr>
               ))}

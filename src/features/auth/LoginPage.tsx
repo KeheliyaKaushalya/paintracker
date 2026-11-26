@@ -62,7 +62,7 @@ if (error) {
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
         <p className="faint">
-          There is no sign-up. Ask an administrator to invite you. Use fake patient data until your hospital has approved this system.
+          There is no sign-up. Ask an administrator to invite you.
         </p>
       </form>
     </div>

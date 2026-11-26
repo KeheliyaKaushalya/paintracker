@@ -3,7 +3,7 @@ import { lazy, Suspense, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
 import { useToast } from '../../components/Toast'
-import { AlertBanner, ConfirmDialog, Empty, ErrorBox, Spinner, Tag, PromptDialog} from '../../components/ui'
+import { ConfirmDialog, Empty, ErrorBox, Spinner, Tag, PromptDialog } from '../../components/ui'
 import { computePOD, fmtDate, fmtDateLong, fmtStamp, hhmm } from '../../lib/dates'
 import { effectiveRounds, newestFirst } from '../../lib/rounds'
 import { useAuth } from '../auth/AuthProvider'
@@ -35,8 +35,9 @@ export function PatientDetailPage() {
   const navigate = useNavigate()
   const [confirm, setConfirm] = useState<'discharge' | 'readmit' | null>(null)
   const [busy, setBusy] = useState(false)
-  const [alertText, setAlertText] = useState('')
-  const [addingAlert, setAddingAlert] = useState(false)
+  const [addingNote, setAddingNote] = useState(false)
+  const [noteError, setNoteError] = useState<string | null>(null)
+  const [showResolved, setShowResolved] = useState(false)
   const [resolving, setResolving] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -54,6 +55,10 @@ export function PatientDetailPage() {
   const alerts = [...p.patient_alerts].sort(
     (a, b) => Number(!!a.resolved_at) - Number(!!b.resolved_at) || (a.created_at < b.created_at ? 1 : -1),
   )
+
+  const openAlerts = alerts.filter((a) => !a.resolved_at)
+  const resolvedAlerts = alerts.filter((a) => !!a.resolved_at)
+
   async function changeStatus() {
     if (!confirm) return
     setBusy(true)
@@ -71,18 +76,19 @@ export function PatientDetailPage() {
     }
   }
 
-  async function submitAlert() {
-    if (!alertText.trim() || !session) return
-    setAddingAlert(true)
+  async function submitNote(text: string) {
+    if (!text.trim() || !session) return
+    setBusy(true)
+    setNoteError(null)
     try {
-      await addAlert(p!.id, alertText, session.user.id)
-      setAlertText('')
+      await addAlert(p!.id, text, session.user.id)
       await qc.invalidateQueries()
-      toast('Alert added')
+      toast('Note added')
+      setAddingNote(false)
     } catch (e) {
-      toast(e instanceof Error ? e.message : 'Could not add the alert', 'error')
+      setNoteError(e instanceof Error ? e.message : 'Could not add the note')
     } finally {
-      setAddingAlert(false)
+      setBusy(false)
     }
   }
 
@@ -141,17 +147,8 @@ export function PatientDetailPage() {
 
   return (
     <div className="stack">
-      <div className="row between">
+      <div className="row">
         <Link to={active ? '/' : '/discharged'} className="btn btn-ghost btn-sm" aria-label="Back"><Icon name="back" />Back</Link>
-        <div className="row">
-          <Link to={`/patients/${p.id}/edit`} className="iconbtn" aria-label="Edit patient"><Icon name="edit" /></Link>
-          <button className="iconbtn" onClick={() => setConfirm(active ? 'discharge' : 'readmit')} aria-label={active ? 'Discharge patient' : 'Return to board'}>
-            <Icon name="check" />
-          </button>
-          {profile?.role === 'admin' && !p.deleted_at && (
-            <button className="iconbtn" onClick={() => { setDeleteError(null); setDeleting(true) }} aria-label="Delete record"><Icon name="trash" /></button>
-          )}
-        </div>
       </div>
 
       <div>
@@ -173,7 +170,7 @@ export function PatientDetailPage() {
           {p.anaesthesia_mode && <Tag>{p.anaesthesia_mode}</Tag>}
           {pod != null && <Tag>POD {pod}</Tag>}
           {p.has_epidural && <Tag tone="primary">Epidural {p.ep_level}</Tag>}
-          {p.has_nerve_catheter && <Tag tone="primary">{p.nv_type} catheter</Tag>}
+          {p.has_nerve_catheter && <Tag tone="primary">{p.nv_type} Catheter</Tag>}
           {p.has_pca && <Tag tone="primary">PCA {p.pca_drug}</Tag>}
           {!active && <Tag tone="warn">Discharged {fmtDate(p.discharged_date)}</Tag>}
         </div>
@@ -182,48 +179,53 @@ export function PatientDetailPage() {
 
       {active && (
         <div className="row">
-          <Link to={`/patients/${p.id}/round?kind=pain`} className="btn btn-primary grow">Pain round</Link>
-          <Link to={`/patients/${p.id}/round?kind=ward`} className="btn btn-outline grow">Ward round</Link>
+          <Link to={`/patients/${p.id}/round?kind=pain`} className="btn btn-primary grow">Pain Round</Link>
+          <Link to={`/patients/${p.id}/round?kind=ward`} className="btn btn-outline grow">Ward Round</Link>
         </div>
       )}
 
-      <section aria-labelledby="alerts-h">
-        <h2 className="section-title" id="alerts-h">Special notes and alerts</h2>
-        <div className="stack-s">
-          {alerts.length === 0 && <p className="faint">No alerts.</p>}
-          {alerts.map((a) => (
-            <AlertBanner
-              key={a.id}
-              resolved={!!a.resolved_at}
-              text={a.alert_text}
-              meta={`${nameOf(a.created_by)} · ${fmtStamp(a.created_at)}${a.resolved_at ? ` · Resolved by ${a.resolved_by ? nameOf(a.resolved_by) : 'unknown'}, ${fmtStamp(a.resolved_at)}` : ''}`}
-            >
-              {a.patient_alert_acks.length > 0 && (
-                <span className="faint">Seen by {a.patient_alert_acks.map((k) => nameOf(k.user_id)).join(', ')}</span>
-              )}
-              {active && session && needsMyAck(a, session.user.id) && (
-                <button className="btn btn-primary btn-sm" onClick={() => void acknowledge(a.id)}>Acknowledge</button>
-              )}
-              {active && !a.resolved_at && (
-                <button className="btn btn-outline btn-sm" onClick={() => setResolving(a.id)}>Resolve</button>
-              )}
-            </AlertBanner>
-          ))}
-          {active && (
-            <div className="stack-s" style={{ marginTop: 6 }}>
-              <label className="label" htmlFor="new-alert">Add an alert</label>
-              <textarea id="new-alert" className="input" value={alertText} onChange={(e) => setAlertText(e.target.value)} placeholder="e.g. Do not remove catheter until reviewed" />
-              <button className="btn btn-outline btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => void submitAlert()} disabled={!alertText.trim() || addingAlert}>
-                {addingAlert ? 'Adding…' : 'Add alert'}
-              </button>
-              <span className="hint">Alerts cannot be edited or deleted. When one no longer applies, resolve it.</span>
-            </div>
-          )}
+      <section aria-labelledby="alerts-h" className="notes-card">
+        <div className="notes-head">
+          <h2 id="alerts-h"><Icon name="alert" />Special Notes{openAlerts.length > 0 ? ` · ${openAlerts.length} open` : ''}</h2>
+          {active && <button className="link-btn" onClick={() => { setNoteError(null); setAddingNote(true) }}>+ Add Note</button>}
         </div>
+        {openAlerts.length === 0 && <p className="note-empty">No Open Special Notes.</p>}
+        {openAlerts.map((a) => (
+          <div className="note-item" key={a.id}>
+            <div>{a.alert_text}</div>
+            <div className="meta">{nameOf(a.created_by)} · {fmtStamp(a.created_at)}</div>
+            {a.patient_alert_acks.length > 0 && (
+              <div className="meta">Seen by {a.patient_alert_acks.map((k) => nameOf(k.user_id)).join(', ')}</div>
+            )}
+            {active && (
+              <div className="note-actions">
+                {session && needsMyAck(a, session.user.id) && (
+                  <button className="btn btn-white btn-sm" onClick={() => void acknowledge(a.id)}>Acknowledge</button>
+                )}
+                <button className="btn btn-white btn-sm" onClick={() => setResolving(a.id)}>Mark Resolved</button>
+              </div>
+            )}
+          </div>
+        ))}
+        {resolvedAlerts.length > 0 && (
+          <>
+            <button className="link-btn" onClick={() => setShowResolved((v) => !v)}>
+              {showResolved ? 'Hide' : 'Show'} Resolved Notes ({resolvedAlerts.length})
+            </button>
+            {showResolved && resolvedAlerts.map((a) => (
+              <div className="note-item resolved" key={a.id}>
+                <div>{a.alert_text}</div>
+                <div className="meta">
+                  {nameOf(a.created_by)} · {fmtStamp(a.created_at)} · Resolved by {a.resolved_by ? nameOf(a.resolved_by) : 'unknown'}, {fmtStamp(a.resolved_at)}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </section>
 
       <section aria-labelledby="sum-h">
-        <h2 className="section-title" id="sum-h">Clinical summary</h2>
+        <h2 className="section-title" id="sum-h">Clinical Summary</h2>
         <div className="card">
           <dl className="info-grid" style={{ margin: 0 }}>
             {p.category === 'PDPH' && (
@@ -258,7 +260,7 @@ export function PatientDetailPage() {
 
       {painRounds.length > 0 && (
         <section aria-labelledby="chart-h">
-          <h2 className="section-title" id="chart-h">Pain trend</h2>
+          <h2 className="section-title" id="chart-h">Pain Trend</h2>
           <div className="card">
             <Suspense fallback={<Spinner label="Loading chart" />}><PainChart rounds={painRounds} /></Suspense>
           </div>
@@ -272,6 +274,33 @@ export function PatientDetailPage() {
           {rounds.map((r) => <RoundItem key={r.id} round={r} all={p.rounds} nameOf={nameOf} canAmend={active} />)}
         </div>
       </section>
+
+      <div className="detail-footer">
+        <Link to={`/patients/${p.id}/edit`} className="btn btn-outline btn-block">Edit Patient</Link>
+        <button className="btn btn-outline btn-block" onClick={() => setConfirm(active ? 'discharge' : 'readmit')}>
+          {active ? 'Discharge Patient' : 'Return to board'}
+        </button>
+        {profile?.role === 'admin' && !p.deleted_at && (
+          <button className="btn btn-quiet btn-block" onClick={() => { setDeleteError(null); setDeleting(true) }}>
+            Delete Patient Record
+          </button>
+        )}
+      </div>
+
+      {addingNote && (
+        <PromptDialog
+          title="Add special note"
+          message="Everyone on the team will see this. Notes cannot be edited or deleted. When one no longer applies, mark it resolved."
+          label="Note"
+          placeholder="e.g. Last dose top-up 0.25% bupivacaine 5 cc"
+          required
+          confirmLabel="Add Note"
+          busy={busy}
+          error={noteError}
+          onCancel={() => setAddingNote(false)}
+          onConfirm={(text) => void submitNote(text)}
+        />
+      )}
 
       {confirm && (
         <ConfirmDialog
@@ -301,7 +330,7 @@ export function PatientDetailPage() {
           message="It disappears from the board and lists but is kept in full. Only an administrator can restore it."
           label="Reason"
           required
-          confirmLabel="Delete record"
+          confirmLabel="Delete Record"
           danger
           busy={busy}
           error={deleteError}

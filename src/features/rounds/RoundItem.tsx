@@ -58,8 +58,7 @@ export function RoundItem({ round: r, all, nameOf, canAmend }: { round: Round; a
       <div className="row between wrap" style={{ marginTop: 6 }}>
         <span className="faint">Recorded by {nameOf(r.created_by)}</span>
         {canAmend && (
-          <Link className="btn btn-ghost btn-sm" to={`/patients/${r.patient_id}/round?amend=${r.id}`}>Correct this round</Link>
-        )}
+          <Link className="btn btn-outline btn-sm btn-error-outline" to={`/patients/${r.patient_id}/round?amend=${r.id}`}>Correct This Round</Link>        )}
       </div>
       {old.length > 0 && (
         <details className="history">

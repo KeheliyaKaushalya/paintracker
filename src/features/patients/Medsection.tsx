@@ -135,7 +135,7 @@ export function MedSection({ patientId, meds, editable, nameOf }: {
                     <DoseHistory changes={changesFor(m.id)} nameOf={nameOf} />
                   </td>
                   <td>{m.route}</td>
-                  <td>{m.dose ?? '—'}</td>
+                  <td><strong>{m.dose ?? '—'}</strong></td>
                   <td>{medFreqLabel(m)}</td>
                   <td>{m.topup ?? '—'}</td>
                   {editable && (

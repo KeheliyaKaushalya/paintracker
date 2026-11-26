@@ -228,28 +228,28 @@ export function PatientDetailPage() {
           <dl className="info-grid" style={{ margin: 0 }}>
             {p.category === 'PDPH' && (
               <>
-                <Info label="PDPH technique">{pdphTechnique(p)}</Info>
-                <Info label="PDPH level">{p.pdph_level}</Info>
-                <Info label="Needle">{p.pdph_needle}</Info>
-                <Info label="Attempts">{p.pdph_attempts != null ? String(p.pdph_attempts) : ''}</Info>
-                <Info label="Symptoms">{p.pdph_symptoms}</Info>
-                <Info label="Presenting complaint">{p.pdph_complaint}</Info>
-                <Info label="Current condition">{p.pdph_condition}</Info>
-                <Info label="Management">{p.pdph_management}</Info>
+                <Info label="PDPH technique"><strong>{pdphTechnique(p)}</strong></Info>
+                <Info label="PDPH level"><strong>{p.pdph_level}</strong></Info>
+                <Info label="Needle"><strong>{p.pdph_needle}</strong></Info>
+                <Info label="Attempts"><strong>{p.pdph_attempts != null ? String(p.pdph_attempts) : ''}</strong></Info>
+                <Info label="Symptoms"><strong>{p.pdph_symptoms}</strong></Info>
+                <Info label="Presenting complaint"><strong>{p.pdph_complaint}</strong></Info>
+                <Info label="Current condition"><strong>{p.pdph_condition}</strong></Info>
+                <Info label="Management"><strong>{p.pdph_management}</strong></Info>
               </>
             )}
             
-            <Info label="Surgery">{p.surgery}</Info>
-            <Info label="Surgery date">{p.surgery_date ? `${fmtDateLong(p.surgery_date)}${p.surgery_time ? ` ${hhmm(p.surgery_time)}` : ''}` : ''}</Info>
-            <Info label="Indication">{p.indication}</Info>
-            <Info label="Post-op day">{pod != null ? `POD ${pod}` : ''}</Info>
-            {p.has_epidural && <Info label="Epidural level">{p.ep_level}</Info>}
-            {p.has_epidural && <Info label="Epidural inserted">{p.ep_inserted_date ? `${fmtDate(p.ep_inserted_date)} ${hhmm(p.ep_inserted_time)}` : ''}</Info>}
-            {p.has_epidural && <Info label="Test / top-up dose">{p.ep_test_dose}</Info>}
-            {p.has_nerve_catheter && <Info label="Nerve catheter">{p.nv_type}</Info>}
-            {p.has_nerve_catheter && <Info label="Catheter inserted">{p.nv_inserted_date ? `${fmtDate(p.nv_inserted_date)} ${hhmm(p.nv_inserted_time)}` : ''}</Info>}
-            {p.has_pca && <Info label="PCA drug">{p.pca_drug}</Info>}
-            {p.has_pca && <Info label="PCA bolus / lockout / max per hr">{[p.pca_bolus, p.pca_lockout, p.pca_max_hr].filter(Boolean).join(' / ')}</Info>}
+            <Info label="Surgery"><strong>{p.surgery}</strong></Info>
+            <Info label="Surgery date"><strong>{p.surgery_date ? `${fmtDateLong(p.surgery_date)}${p.surgery_time ? ` ${hhmm(p.surgery_time)}` : ''}` : ''}</strong></Info>
+            <Info label="Indication"><strong>{p.indication}</strong></Info>
+            <Info label="Post-op day"><strong>{pod != null ? `POD ${pod}` : ''}</strong></Info>
+            {p.has_epidural && <Info label="Epidural level"><strong>{p.ep_level}</strong></Info>}
+            {p.has_epidural && <Info label="Epidural inserted"><strong>{p.ep_inserted_date ? `${fmtDate(p.ep_inserted_date)} ${hhmm(p.ep_inserted_time)}` : ''}</strong></Info>}
+            {p.has_epidural && <Info label="Test / top-up dose"><strong>{p.ep_test_dose}</strong></Info>}
+            {p.has_nerve_catheter && <Info label="Nerve catheter"><strong>{p.nv_type}</strong></Info>}
+            {p.has_nerve_catheter && <Info label="Catheter inserted"><strong>{p.nv_inserted_date ? `${fmtDate(p.nv_inserted_date)} ${hhmm(p.nv_inserted_time)}` : ''}</strong></Info>}
+            {p.has_pca && <Info label="PCA drug"><strong>{p.pca_drug}</strong></Info>}
+            {p.has_pca && <Info label="PCA bolus / lockout / max per hr"><strong>{[p.pca_bolus, p.pca_lockout, p.pca_max_hr].filter(Boolean).join(' / ')}</strong></Info>}
           </dl>
         </div>
       </section>

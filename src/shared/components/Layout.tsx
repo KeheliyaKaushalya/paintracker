@@ -100,6 +100,10 @@ export function Layout() {
       )}
 
       <nav className="bottomnav" aria-label="Main">
+        <NavLink to="/dashboard" className={({ isActive }) => `navbtn ${isActive ? "active" : ""}`}>
+          <Icon name="board" />
+          Dashboard
+        </NavLink>
         <NavLink
           to="/"
           end

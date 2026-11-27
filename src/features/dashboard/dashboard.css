@@ -1,0 +1,19 @@
+.dashboard-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.dashboard-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.dashboard-metric strong { font-size: 1.6rem; color: var(--primary-ink); }
+.dashboard-metric[aria-pressed="true"] { border-color: var(--primary-ink); }
+.dashboard-metric:focus-visible { outline: 2px solid var(--primary-ink); outline-offset: 2px; }

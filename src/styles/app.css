@@ -559,11 +559,12 @@ td {
 /* ---------- board ---------- */
 .cat-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  overflow-x: auto;
+  width: 100%;
+  min-width: 0;
   padding-bottom: 4px;
   margin-bottom: 12px;
-  scrollbar-width: none;
 }
 .cat-tab {
   flex: none;

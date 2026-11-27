@@ -7,6 +7,7 @@ import { RequireAdmin, RequireAuth } from "../features/auth/RequireAuth";
 import { BoardPage } from "../features/patients/BoardPage";
 import { configError } from "../infrastructure/supabase/supabase";
 import { SetPasswordPage } from "../features/auth/SetPasswordPage";
+const ClinicalDashboardPage = lazy(() => import("../features/dashboard/ClinicalDashboardPage"));
 const DischargedPage = lazy(() =>
   import("../features/patients/DischargedPage").then((m) => ({
     default: m.DischargedPage,
@@ -70,6 +71,7 @@ export default function App() {
         <Route element={<RequireAuth />}>
           <Route element={<Layout />}>
             <Route index element={<BoardPage />} />
+            <Route path="dashboard" element={<ClinicalDashboardPage />} />
             <Route
               path="rounds"
               element={<BoardPage key="rounds" mode="rounds" />}

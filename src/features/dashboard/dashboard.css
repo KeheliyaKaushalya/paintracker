@@ -17,3 +17,6 @@
 .dashboard-metric strong { font-size: 1.6rem; color: var(--primary-ink); }
 .dashboard-metric[aria-pressed="true"] { border-color: var(--primary-ink); }
 .dashboard-metric:focus-visible { outline: 2px solid var(--primary-ink); outline-offset: 2px; }
+.dashboard-breakdown { white-space: normal; text-align: left; overflow-wrap: anywhere; }
+.dashboard-trend { display: grid; gap: 4px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.dashboard-trend progress, .dashboard-analytics progress { width: 100%; accent-color: var(--primary); }

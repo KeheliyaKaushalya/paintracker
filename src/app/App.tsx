@@ -70,7 +70,8 @@ export default function App() {
         <Route path="/set-password" element={<SetPasswordPage />} />
         <Route element={<RequireAuth />}>
           <Route element={<Layout />}>
-            <Route index element={<BoardPage />} />
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="patients" element={<BoardPage />} />
             <Route path="dashboard" element={<ClinicalDashboardPage />} />
             <Route
               path="rounds"
@@ -103,7 +104,7 @@ export default function App() {
               path="*"
               element={
                 <Empty title="Page not found">
-                  <Link to="/">Back to patients</Link>
+                  <Link to="/patients">Back to patients</Link>
                 </Empty>
               }
             />

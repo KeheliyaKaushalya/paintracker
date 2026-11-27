@@ -50,7 +50,7 @@ export function PatientDetailPage() {
 
   if (q.isLoading) return <Spinner />
   if (q.error) return <ErrorBox error={q.error} onRetry={() => void q.refetch()} />
-  if (!p) return <Empty title="Patient not found">They may have been removed or you may not have access. <Link to="/">Back to the board</Link></Empty>
+  if (!p) return <Empty title="Patient not found">They may have been removed or you may not have access. <Link to="/patients">Back to the board</Link></Empty>
 
   const active = p.status === 'active'
   const pod = computePOD(p.surgery_date)
@@ -70,7 +70,7 @@ export function PatientDetailPage() {
       await qc.invalidateQueries()
       toast(confirm === 'discharge' ? 'Patient discharged' : 'Patient is back on the board')
       setConfirm(null)
-      if (confirm === 'discharge') navigate('/')
+      if (confirm === 'discharge') navigate('/patients')
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Could not update the patient', 'error')
     } finally {
@@ -126,7 +126,7 @@ export function PatientDetailPage() {
       await deletePatient(p!.id, reason)
       await qc.invalidateQueries()
       toast('Record deleted. An administrator can restore it.')
-      navigate('/')
+      navigate('/patients')
     } catch (e) {
       setDeleteError(e instanceof Error ? e.message : 'Could not delete the record')
     } finally {
@@ -150,7 +150,7 @@ export function PatientDetailPage() {
   return (
     <div className="stack">
       <div className="row">
-        <Link to={active ? '/' : '/discharged'} className="btn btn-ghost btn-sm" aria-label="Back"><Icon name="back" />Back</Link>
+        <Link to={active ? '/patients' : '/discharged'} className="btn btn-ghost btn-sm" aria-label="Back"><Icon name="back" />Back</Link>
       </div>
 
       <div>

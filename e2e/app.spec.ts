@@ -17,12 +17,18 @@ async function start(page: Page, over: Partial<MockState> = {}) {
   await installMockBackend(page, state);
 }
 
-async function login(page: Page) {
+async function login(page: Page, openBoard = true) {
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
   await page.getByLabel("Email").fill("nurse@example.com");
   await page.getByLabel("Password").fill("correct-horse");
   await page.getByRole("button", { name: "Sign in" }).click();
+  if (openBoard) {
+    await expect(
+      page.getByRole("heading", { name: "Clinical Dashboard" }),
+    ).toBeVisible();
+    await page.getByRole("link", { name: "Patients", exact: true }).click();
+  }
 }
 
 test("logged-out visitors are sent to the login page", async ({ page }) => {
@@ -43,6 +49,10 @@ test("wrong password is refused, right password shows the board", async ({
   await expect(page.getByRole("alert")).toContainText("not correct");
   await page.getByLabel("Password").fill("correct-horse");
   await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Clinical Dashboard" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Patients", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Patients" })).toBeVisible();
   await expect(page.getByText("2 active patients")).toBeVisible();
   await expect(page.getByText("Demo Patient One")).toBeVisible();
@@ -51,7 +61,7 @@ test("wrong password is refused, right password shows the board", async ({
 
 test("an unapproved user sees only the waiting screen", async ({ page }) => {
   await start(page, { active: false });
-  await login(page);
+  await login(page, false);
   await expect(
     page.getByRole("heading", { name: "Waiting for approval" }),
   ).toBeVisible();
@@ -74,7 +84,12 @@ test("patient page shows alerts, medications, chart and rounds", async ({
 }) => {
   await start(page);
   await login(page);
-  await page.getByText("Demo Patient One").click();
+  await page
+    .getByRole("link", {
+      name: "Demo Patient One, 7A",
+      exact: true,
+    })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Demo Patient One" }),
   ).toBeVisible();
@@ -89,7 +104,12 @@ test("adding a pain round: warns about severe pain, saves, records the right val
 }) => {
   await start(page);
   await login(page);
-  await page.getByText("Demo Patient One").click();
+  await page
+    .getByRole("link", {
+      name: "Demo Patient One, 7A",
+      exact: true,
+    })
+    .click();
   await page.getByRole("link", { name: "Pain round" }).click();
   await page.getByRole("button", { name: "Rest pain 3 out of 10" }).click();
   await page.getByRole("button", { name: "Movement pain 8 out of 10" }).click();
@@ -123,7 +143,12 @@ test("typos are blocked with a clear message and nothing is sent", async ({
 }) => {
   await start(page);
   await login(page);
-  await page.getByText("Demo Patient One").click();
+  await page
+    .getByRole("link", {
+      name: "Demo Patient One, 7A",
+      exact: true,
+    })
+    .click();
   await page.getByRole("link", { name: "Pain round" }).click();
   const before = state.rounds.length;
   await page.getByRole("button", { name: "Save round" }).click();
@@ -141,7 +166,12 @@ test("correcting a round keeps the original as an earlier version", async ({
 }) => {
   await start(page);
   await login(page);
-  await page.getByText("Demo Patient One").click();
+  await page
+    .getByRole("link", {
+      name: "Demo Patient One, 7A",
+      exact: true,
+    })
+    .click();
   await page.getByRole("link", { name: "Correct this round" }).first().click();
   await expect(
     page.getByRole("heading", { name: "Correct round" }),
@@ -161,7 +191,12 @@ test("offline: the round is kept on the phone, flagged as unsent, then sent by i
 }) => {
   await start(page);
   await login(page);
-  await page.getByText("Demo Patient One").click();
+  await page
+    .getByRole("link", {
+      name: "Demo Patient One, 7A",
+      exact: true,
+    })
+    .click();
   await page.getByRole("link", { name: "Pain round" }).click();
   await page.getByRole("button", { name: "Rest pain 1 out of 10" }).click();
   await page.getByRole("button", { name: "Movement pain 2 out of 10" }).click();
@@ -191,7 +226,12 @@ test('offline: if the phone is online but the server is still down, the entry st
 }) => {
   await start(page);
   await login(page);
-  await page.getByText("Demo Patient One").click();
+  await page
+    .getByRole("link", {
+      name: "Demo Patient One, 7A",
+      exact: true,
+    })
+    .click();
   await page.getByRole("link", { name: "Pain round" }).click();
   await page.getByRole("button", { name: "Rest pain 4 out of 10" }).click();
   await page.getByRole("button", { name: "Movement pain 5 out of 10" }).click();
@@ -365,6 +405,7 @@ test("no sideways scrolling on a phone, on the main screens", async ({
   await login(page);
   for (const path of [
     "/",
+    "/patients",
     "/patients/" + P1,
     "/patients/new",
     "/patients/" + P1 + "/round",
@@ -386,4 +427,17 @@ test("signs out after being idle", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Patients" })).toBeVisible();
   await page.clock.runFor(6 * 60 * 1000);
   await expect(page).toHaveURL(/\/login/);
+});
+
+test("dashboard default route and metric filtering", async ({ page }) => {
+  await start(page);
+  await login(page, false);
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await page.getByRole("button", { name: /Active patients/ }).click();
+  await expect(page.locator(".pcard")).toHaveCount(2);
+  await page.getByRole("button", { name: /No pain assessment today/ }).click();
+  await expect(
+    page.getByRole("button", { name: /No pain assessment today/ }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Export CSV" })).toHaveCount(0);
 });

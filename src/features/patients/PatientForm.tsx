@@ -119,7 +119,7 @@ export function PatientForm({
     <form onSubmit={submit} noValidate className="stack">
       <div className="row between">
         <Link
-          to={patientId ? `/patients/${patientId}` : "/"}
+          to={patientId ? `/patients/${patientId}` : "/patients"}
           className="btn btn-ghost btn-sm"
         >
           <Icon name="back" />

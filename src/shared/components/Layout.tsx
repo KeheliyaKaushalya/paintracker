@@ -37,7 +37,7 @@ export function Layout() {
     month: "short",
   });
   const isAdmin = profile?.role === "admin";
-  const onPatients = location.pathname === "/";
+  const onPatients = location.pathname === "/patients";
 
   return (
     <>
@@ -105,7 +105,7 @@ export function Layout() {
           Dashboard
         </NavLink>
         <NavLink
-          to="/"
+          to="/patients"
           end
           className={({ isActive }) => `navbtn ${isActive ? "active" : ""}`}
         >

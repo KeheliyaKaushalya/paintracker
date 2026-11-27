@@ -1,3 +1,4 @@
+import { useSubmission } from "../../shared/hooks/useSubmission";
 import { useState, type FormEvent } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Field, Spinner } from "../../shared/components/ui";
@@ -10,7 +11,7 @@ export function LoginPage() {
   const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
+  const { busy, begin, end } = useSubmission();
   const [error, setError] = useState<string | null>(null);
 
   if (loading) return <Spinner label="Checking your sign-in" />;
@@ -19,29 +20,34 @@ export function LoginPage() {
   async function submit(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-    setBusy(false);
-    if (error) {
-      const code = (error as { code?: string }).code;
-      if (/network|fetch/i.test(error.message)) {
-        setError("Can't reach the server. Check your connection.");
-      } else if (code === "invalid_credentials") {
-        setError("Email or password is not correct.");
-      } else if (code === "email_not_confirmed") {
-        setError(
-          "This email has not been confirmed yet. Ask an administrator to confirm it.",
-        );
-      } else {
-        setError(`Sign-in failed: ${error.message}`);
+    if (!begin()) return;
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (error) {
+        const code = (error as { code?: string }).code;
+        if (/network|fetch/i.test(error.message)) {
+          setError("Can't reach the server. Check your connection.");
+        } else if (code === "invalid_credentials") {
+          setError("Email or password is not correct.");
+        } else if (code === "email_not_confirmed") {
+          setError(
+            "This email has not been confirmed yet. Ask an administrator to confirm it.",
+          );
+        } else {
+          setError(`Sign-in failed: ${error.message}`);
+        }
+        return;
       }
-      return;
+      const from = (location.state as { from?: string } | null)?.from;
+      navigate(from && from !== "/login" ? from : "/", { replace: true });
+    } catch {
+      setError("Could not complete the request. Please try again.");
+    } finally {
+      end();
     }
-    const from = (location.state as { from?: string } | null)?.from;
-    navigate(from && from !== "/login" ? from : "/", { replace: true });
   }
 
   return (

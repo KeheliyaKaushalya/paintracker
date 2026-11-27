@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, useId, useRef, type ReactNode } from "react";
 import { Icon } from "./Icon";
 
 export function Spinner({ label = "Loading" }: { label?: string }) {
@@ -114,6 +114,43 @@ export function AlertBanner({
   );
 }
 
+/** Keep keyboard focus inside the existing dialog and restore it on close. */
+function useDialogKeyboard(busy: boolean | undefined, onCancel: () => void) {
+  const ref = useRef<HTMLDivElement>(null);
+  const latest = useRef({ busy, onCancel });
+  useEffect(() => { latest.current = { busy, onCancel }; }, [busy, onCancel]);
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    const previous = document.activeElement;
+    const controls = () => Array.from(dialog.querySelectorAll<HTMLElement>(
+      'button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), a[href], [tabindex="0"]',
+    ));
+    (controls()[0] ?? dialog).focus();
+    function keydown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (!latest.current.busy) latest.current.onCancel();
+      } else if (e.key === "Tab") {
+        const items = controls();
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (!first || !last) { e.preventDefault(); dialog?.focus(); return; }
+        if (!dialog?.contains(document.activeElement) || (e.shiftKey && document.activeElement === first) || (!e.shiftKey && document.activeElement === last)) {
+          e.preventDefault();
+          (e.shiftKey ? last : first).focus();
+        }
+      }
+    }
+    document.addEventListener("keydown", keydown);
+    return () => {
+      document.removeEventListener("keydown", keydown);
+      if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+    };
+  }, []);
+  return ref;
+}
+
 export function ConfirmDialog(props: {
   title: string;
   message: string;
@@ -123,22 +160,27 @@ export function ConfirmDialog(props: {
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const dialogRef = useDialogKeyboard(props.busy, props.onCancel);
+  const id = useId();
   return (
-    <div className="dialog-backdrop" onClick={props.onCancel}>
+    <div className="dialog-backdrop" onClick={() => { if (!props.busy) props.onCancel(); }}>
       <div
         className="dialog"
+        ref={dialogRef}
+        tabIndex={-1}
         role="alertdialog"
         aria-modal="true"
-        aria-labelledby="dlg-t"
-        aria-describedby="dlg-m"
+        aria-labelledby={`${id}-title`}
+        aria-describedby={`${id}-message`}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="dlg-t">{props.title}</h2>
-        <p id="dlg-m" className="muted">
+        <h2 id={`${id}-title`}>{props.title}</h2>
+        <p id={`${id}-message`} className="muted">
           {props.message}
         </p>
         <div className="row" style={{ justifyContent: "flex-end" }}>
           <button
+            type="button"
             className="btn btn-outline"
             onClick={props.onCancel}
             disabled={props.busy}
@@ -146,6 +188,7 @@ export function ConfirmDialog(props: {
             Cancel
           </button>
           <button
+            type="button"
             className={`btn ${props.danger ? "btn-danger" : "btn-primary"}`}
             onClick={props.onConfirm}
             disabled={props.busy}
@@ -202,23 +245,27 @@ export function PromptDialog(props: {
 }) {
   const [value, setValue] = useState("");
   const missing = props.required && !value.trim();
+  const dialogRef = useDialogKeyboard(props.busy, props.onCancel);
+  const id = useId();
   return (
-    <div className="dialog-backdrop" onClick={props.onCancel}>
+    <div className="dialog-backdrop" onClick={() => { if (!props.busy) props.onCancel(); }}>
       <div
         className="dialog"
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="pd-t"
-        aria-describedby="pd-m"
+        aria-labelledby={`${id}-title`}
+        aria-describedby={`${id}-message`}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="pd-t">{props.title}</h2>
-        <p id="pd-m" className="muted">
+        <h2 id={`${id}-title`}>{props.title}</h2>
+        <p id={`${id}-message`} className="muted">
           {props.message}
         </p>
-        <Field id="pd-input" label={props.label}>
+        <Field id={`${id}-input`} label={props.label}>
           <textarea
-            id="pd-input"
+            id={`${id}-input`}
             className="input"
             placeholder={props.placeholder}
             value={value}
@@ -232,6 +279,7 @@ export function PromptDialog(props: {
         )}
         <div className="row" style={{ justifyContent: "flex-end" }}>
           <button
+            type="button"
             className="btn btn-outline"
             onClick={props.onCancel}
             disabled={props.busy}
@@ -239,6 +287,7 @@ export function PromptDialog(props: {
             Cancel
           </button>
           <button
+            type="button"
             className={`btn ${props.danger ? "btn-danger" : "btn-primary"}`}
             onClick={() => props.onConfirm(value)}
             disabled={props.busy || missing}

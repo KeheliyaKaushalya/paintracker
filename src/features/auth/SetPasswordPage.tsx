@@ -1,3 +1,4 @@
+import { useSubmission } from "../../shared/hooks/useSubmission";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Field, Spinner } from "../../shared/components/ui";
@@ -12,7 +13,7 @@ export function SetPasswordPage() {
   const [state, setState] = useState<State>("checking");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [busy, setBusy] = useState(false);
+  const { busy, begin, end } = useSubmission();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export function SetPasswordPage() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (state !== "ready") return;
     setError(null);
     if (password.length < MIN_PASSWORD_LENGTH) {
       setError(`Use at least ${MIN_PASSWORD_LENGTH} characters`);
@@ -52,14 +54,19 @@ export function SetPasswordPage() {
       setError("The two passwords do not match");
       return;
     }
-    setBusy(true);
-    const { error: err } = await supabase.auth.updateUser({ password });
-    setBusy(false);
-    if (err) {
-      setError(err.message);
-      return;
+    if (!begin()) return;
+    try {
+      const { error: err } = await supabase.auth.updateUser({ password });
+      if (err) {
+        setError(err.message);
+        return;
+      }
+      navigate("/", { replace: true });
+    } catch {
+      setError("Could not complete the request. Please try again.");
+    } finally {
+      end();
     }
-    navigate("/", { replace: true });
   }
 
   if (state === "checking") return <Spinner label="Checking your invite" />;

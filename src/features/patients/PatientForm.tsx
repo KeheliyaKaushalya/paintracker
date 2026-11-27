@@ -1,3 +1,4 @@
+import { useSubmission } from "../../shared/hooks/useSubmission";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -47,7 +48,7 @@ export function PatientForm({
   const toast = useToast();
   const [f, setF] = useState<PatientFormValues>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState(false);
+  const { busy, begin, end } = useSubmission();
   const [formError, setFormError] = useState<string | null>(null);
   const wardsQ = useWards();
   const wardNames = wardsQ.data
@@ -87,7 +88,7 @@ export function PatientForm({
     }
     setErrors({});
     if (!session) return;
-    setBusy(true);
+    if (!begin()) return;
     try {
       const out = patientId
         ? await updatePatient(patientId, built.value, existingMedIds)
@@ -99,7 +100,7 @@ export function PatientForm({
     } catch (ex) {
       setFormError(ex instanceof Error ? ex.message : friendlyMessage(null));
     } finally {
-      setBusy(false);
+      end();
     }
   }
 

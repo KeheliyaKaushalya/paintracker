@@ -1,3 +1,4 @@
+import { useSubmission } from "../../shared/hooks/useSubmission";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -38,7 +39,7 @@ export function RoundForm({
   const toast = useToast();
   const [f, setF] = useState<RoundFormValues>(() => initialValues(kind, amend));
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState(false);
+  const { busy, begin, end } = useSubmission();
   const [formError, setFormError] = useState<string | null>(null);
   const roundId = useRef(crypto.randomUUID()); // created once, so a retry can never duplicate this round
   const set = <K extends keyof RoundFormValues>(k: K, v: RoundFormValues[K]) =>
@@ -82,7 +83,7 @@ export function RoundForm({
       return;
     }
     setErrors({});
-    setBusy(true);
+    if (!begin()) return;
     try {
       const result = await saveRound(built.value, session.user.id);
       await qc.invalidateQueries();
@@ -100,7 +101,7 @@ export function RoundForm({
         ex instanceof Error ? ex.message : "Could not save the round.",
       );
     } finally {
-      setBusy(false);
+      end();
     }
   }
 

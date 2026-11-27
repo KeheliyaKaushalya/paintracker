@@ -382,6 +382,6 @@ test("signs out after being idle", async ({ page }) => {
   await start(page);
   await login(page);
   await expect(page.getByRole("heading", { name: "Patients" })).toBeVisible();
-  await page.clock.fastForward("06:00");
+  await page.clock.runFor(6 * 60 * 1000);
   await expect(page).toHaveURL(/\/login/);
 });

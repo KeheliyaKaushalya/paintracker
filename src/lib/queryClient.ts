@@ -1,5 +1,2 @@
-import { QueryClient } from '@tanstack/react-query'
-
-export const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 10_000, retry: 1, refetchOnWindowFocus: true } },
-})
+// Compatibility entry point; implementation lives in app/queryClient.ts.
+export * from "../app/queryClient";

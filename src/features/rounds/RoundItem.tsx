@@ -1,45 +1,62 @@
-import { Link } from 'react-router-dom'
-import { Tag } from '../../components/ui'
-import { formatBp } from '../../lib/bp'
-import { fmtDate, hhmm } from '../../lib/dates'
-import type { Round } from '../../lib/models'
-import { painLevel, painWord } from '../../lib/pain'
-import { previousVersions } from '../../lib/rounds'
+import { Link } from "react-router-dom";
+import { Tag } from "../../shared/components/ui";
+import { formatBp } from "../../domain/clinical/bp";
+import { fmtDate, hhmm } from "../../domain/clinical/dates";
+import type { Round } from "../../domain/clinical/models";
+import { painLevel, painWord } from "../../domain/clinical/pain";
+import { previousVersions } from "../../domain/clinical/rounds";
 
 function Score({ label, value }: { label: string; value: number | null }) {
-  if (value == null) return null
-  const lv = painLevel(value)
+  if (value == null) return null;
+  const lv = painLevel(value);
   return (
-    <span className={`tag ${lv === 'low' ? 'good' : lv === 'mid' ? 'warn' : 'alert'}`}>
-      {label} {value}{lv === 'high' ? ` ▲ ${painWord(value)}` : ''}
+    <span
+      className={`tag ${
+        lv === "low" ? "good" : lv === "mid" ? "warn" : "alert"
+      }`}
+    >
+      {label} {value}
+      {lv === "high" ? ` ▲ ${painWord(value)}` : ""}
     </span>
-  )
+  );
 }
 
-export function RoundItem({ round: r, all, nameOf, canAmend }: { round: Round; all: Round[]; nameOf: (id: string) => string; canAmend: boolean }) {
-  const old = previousVersions(r, all)
+export function RoundItem({
+  round: r,
+  all,
+  nameOf,
+  canAmend,
+}: {
+  round: Round;
+  all: Round[];
+  nameOf: (id: string) => string;
+  canAmend: boolean;
+}) {
+  const old = previousVersions(r, all);
   const vitals = [
     r.rr != null ? `RR ${r.rr}` : null,
     r.spo2 != null ? `SpO2 ${r.spo2}%` : null,
     r.hr != null ? `HR ${r.hr}` : null,
     r.bp_sys != null ? `BP ${formatBp(r.bp_sys, r.bp_dia)}` : null,
     r.gcs != null ? `GCS ${r.gcs}` : null,
-  ].filter(Boolean)
+  ].filter(Boolean);
 
   return (
     <div className="round-item" data-testid="round-item">
       <div className="row between wrap">
         <strong>
           {fmtDate(r.round_date)}
-          {r.round_time ? ` · ${hhmm(r.round_time)}` : ''}
-          {r.session ? ` · ${r.session}` : ''}
+          {r.round_time ? ` · ${hhmm(r.round_time)}` : ""}
+          {r.session ? ` · ${r.session}` : ""}
         </strong>
         <div className="row">
-          <Tag tone={r.kind === 'pain' ? 'primary' : undefined}>{r.kind === 'pain' ? 'Pain round' : 'Ward round'}</Tag>
+          <Tag tone={r.kind === "pain" ? "primary" : undefined}>
+            {r.kind === "pain" ? "Pain round" : "Ward round"}
+          </Tag>
           {r.amended_of && <Tag tone="warn">Corrected</Tag>}
         </div>
       </div>
-      {r.kind === 'pain' && (
+      {r.kind === "pain" && (
         <div className="round-scores">
           <Score label="Rest" value={r.pain_rest} />
           <Score label="Movement" value={r.pain_move} />
@@ -47,29 +64,54 @@ export function RoundItem({ round: r, all, nameOf, canAmend }: { round: Round; a
           <Score label="Physio" value={r.pain_physio} />
         </div>
       )}
-      {vitals.length > 0 && <p className="mono muted" style={{ fontSize: 13 }}>{vitals.join(' · ')}</p>}
-      {r.mobilization && <p className="muted" style={{ fontSize: 13 }}>{r.mobilization}</p>}
+      {vitals.length > 0 && (
+        <p className="mono muted" style={{ fontSize: 13 }}>
+          {vitals.join(" · ")}
+        </p>
+      )}
+      {r.mobilization && (
+        <p className="muted" style={{ fontSize: 13 }}>
+          {r.mobilization}
+        </p>
+      )}
       {r.tags.length > 0 && (
         <div className="row wrap" style={{ marginTop: 6 }}>
-          {r.tags.map((t) => <Tag key={t} tone={t === 'Urgent review' ? 'alert' : 'info'}>{t}</Tag>)}
+          {r.tags.map((t) => (
+            <Tag key={t} tone={t === "Urgent review" ? "alert" : "info"}>
+              {t}
+            </Tag>
+          ))}
         </div>
       )}
       {r.note && <p style={{ marginTop: 6 }}>{r.note}</p>}
       <div className="row between wrap" style={{ marginTop: 6 }}>
         <span className="faint">Recorded by {nameOf(r.created_by)}</span>
         {canAmend && (
-          <Link className="btn btn-outline btn-sm btn-error-outline" to={`/patients/${r.patient_id}/round?amend=${r.id}`}>Correct This Round</Link>        )}
+          <Link
+            className="btn btn-outline btn-sm btn-error-outline"
+            to={`/patients/${r.patient_id}/round?amend=${r.id}`}
+          >
+            Correct This Round
+          </Link>
+        )}
       </div>
       {old.length > 0 && (
         <details className="history">
-          <summary>Earlier version{old.length > 1 ? 's' : ''} ({old.length})</summary>
+          <summary>
+            Earlier version{old.length > 1 ? "s" : ""} ({old.length})
+          </summary>
           {old.map((o) => (
             <p key={o.id} className="mono" style={{ marginTop: 4 }}>
-              {fmtDate(o.round_date)} {hhmm(o.round_time)} · {o.kind === 'pain' ? `Rest ${o.pain_rest} / Move ${o.pain_move}${o.pain_cough != null ? ` / Cough ${o.pain_cough}` : ''}${o.pain_physio != null ? ` / Physio ${o.pain_physio}` : ''}` : 'ward round'}
+              {fmtDate(o.round_date)} {hhmm(o.round_time)} ·{" "}
+              {o.kind === "pain"
+                ? `Rest ${o.pain_rest} / Move ${o.pain_move}${
+                    o.pain_cough != null ? ` / Cough ${o.pain_cough}` : ""
+                  }${o.pain_physio != null ? ` / Physio ${o.pain_physio}` : ""}`
+                : "ward round"}
             </p>
           ))}
         </details>
       )}
     </div>
-  )
+  );
 }

@@ -3,12 +3,12 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { WardsPanel, ExportsPanel, AccountTools } from './Panels'
 import { ShiftTemplatesAdmin } from './ShiftTemplatesAdmin'
-import { useToast } from '../../components/Toast'
-import { Empty, ErrorBox, Spinner, Tag, Segmented } from '../../components/ui'
-import { ROLES } from '../../lib/constants'
-import type { Profile, Role } from '../../lib/models'
+import { useToast } from '../../shared/components/Toast'
+import { Empty, ErrorBox, Spinner, Tag, Segmented } from '../../shared/components/ui'
+import { ROLES } from '../../domain/clinical/constants'
+import type { Profile, Role } from '../../domain/clinical/models'
 import { useAuth } from '../auth/AuthProvider'
-import { updateProfile } from '../patients/api'
+import { updateProfile } from '../../infrastructure/repositories/patients'
 import { useProfiles } from '../patients/hooks'
 import { InviteUserForm } from './InviteUserForm' // NEW
 
@@ -72,7 +72,7 @@ function Accounts() {
                 <label className="sr-only" htmlFor={`role-${p.id}`}>Role for {p.full_name}</label>
                 <select id={`role-${p.id}`} className="input" style={{ width: 'auto' }} value={p.role} disabled={self || busyId === p.id}
                   onChange={(e) => void change(p, { role: e.target.value as Role })}>
-                  {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                  {ROLES.map((r) => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
                 </select>
                 <button className="btn btn-outline btn-sm" disabled={self || busyId === p.id} onClick={() => void change(p, { active: false })}>Deactivate</button>
               </div>

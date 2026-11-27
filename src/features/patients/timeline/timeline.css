@@ -1,0 +1,136 @@
+/* Continuous, borderless clinical timeline */
+.patient-timeline .timeline-stream {
+  display: block;
+}
+.patient-timeline .timeline-day {
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin: 16px 0 10px;
+  font-weight: 600;
+}
+.patient-timeline .timeline-event {
+  position: relative;
+  margin: 0;
+  padding: 0 0 18px 40px;
+  overflow-wrap: anywhere;
+}
+.patient-timeline .timeline-event::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 29px;
+  bottom: 4px;
+  width: 1px;
+  background: var(--line);
+}
+.patient-timeline .timeline-row:last-child .timeline-event::before {
+  display: none;
+}
+.patient-timeline .timeline-event > summary {
+  position: relative;
+  display: block;
+  list-style: none;
+  cursor: pointer;
+  padding: 2px 24px 0 0;
+}
+.patient-timeline .timeline-event > summary::-webkit-details-marker {
+  display: none;
+}
+.patient-timeline .timeline-event > summary::after {
+  content: "";
+  position: absolute;
+  right: 6px;
+  top: 9px;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  opacity: 0.65;
+}
+.patient-timeline .timeline-event[open] > summary::after {
+  transform: rotate(225deg);
+}
+.patient-timeline .timeline-marker {
+  position: absolute;
+  left: -40px;
+  top: 0;
+  width: 24px;
+  height: 24px;
+  color: var(--ink-muted);
+}
+.patient-timeline .timeline-marker svg {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+.patient-timeline .timeline-marker[data-category="Rounds"] {
+  color: var(--primary);
+}
+.patient-timeline .timeline-marker[data-category="Medications"] {
+  color: #9871d0;
+}
+.patient-timeline .timeline-event > summary > strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+.patient-timeline .timeline-meta {
+  display: block;
+  margin-top: 7px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+.patient-timeline .timeline-detail {
+  margin-top: 10px;
+  padding: 8px 0;
+}
+.patient-timeline .timeline-event > summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+}
+.timeline-dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.timeline-controls label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.timeline-controls input {
+  width: 100%;
+  min-width: 0;
+}
+.timeline-print-heading {
+  display: none;
+}
+@media print {
+  body.printing-patient-timeline * {
+    visibility: hidden !important;
+  }
+  body.printing-patient-timeline .patient-timeline,
+  body.printing-patient-timeline .patient-timeline * {
+    visibility: visible !important;
+  }
+  body.printing-patient-timeline .patient-timeline {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    color: #111;
+    background: white;
+  }
+  body.printing-patient-timeline .timeline-controls,
+  body.printing-patient-timeline .timeline-chart {
+    display: none !important;
+  }
+  body.printing-patient-timeline .timeline-print-heading {
+    display: block;
+  }
+  body.printing-patient-timeline .timeline-event {
+    break-inside: avoid;
+    color: #111;
+    background: white;
+  }
+}

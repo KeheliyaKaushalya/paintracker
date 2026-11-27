@@ -1,18 +1,19 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Icon } from '../../components/Icon'
-import { useToast } from '../../components/Toast'
-import { ConfirmDialog, Empty, ErrorBox, Spinner, Tag, PromptDialog } from '../../components/ui'
-import { computePOD, fmtDate, fmtDateLong, fmtStamp, hhmm } from '../../lib/dates'
-import { effectiveRounds, newestFirst } from '../../lib/rounds'
+import { Icon } from '../../shared/components/Icon'
+import { useToast } from '../../shared/components/Toast'
+import { ConfirmDialog, Empty, ErrorBox, Spinner, Tag, PromptDialog } from '../../shared/components/ui'
+import { computePOD, fmtDate, fmtDateLong, fmtStamp, hhmm } from '../../domain/clinical/dates'
+import { effectiveRounds, newestFirst } from '../../domain/clinical/rounds'
 import { useAuth } from '../auth/AuthProvider'
 import { RoundItem } from '../rounds/RoundItem'
-import { ackAlert, addAlert, dischargePatient, readmitPatient, resolveAlert, deletePatient, restorePatient, } from './api'
+import { ackAlert, addAlert, dischargePatient, readmitPatient, resolveAlert, deletePatient, restorePatient, } from '../../infrastructure/repositories/patients'
 import { useNameLookup, usePatient } from './hooks'
+import { PatientTimeline } from './timeline/PatientTimeline'
 import { MedSection } from './Medsection'
-import { needsMyAck } from '../../lib/alerts'
-import { pdphTechnique } from '../../lib/category'
+import { needsMyAck } from '../../domain/clinical/alerts'
+import { pdphTechnique } from '../../domain/clinical/category'
 
 const PainChart = lazy(() => import('../rounds/PainChart'))
 
@@ -33,6 +34,7 @@ export function PatientDetailPage() {
   const qc = useQueryClient()
   const toast = useToast()
   const navigate = useNavigate()
+  const [view, setView] = useState<'overview' | 'timeline'>('overview')
   const [confirm, setConfirm] = useState<'discharge' | 'readmit' | null>(null)
   const [busy, setBusy] = useState(false)
   const [addingNote, setAddingNote] = useState(false)
@@ -184,6 +186,13 @@ export function PatientDetailPage() {
         </div>
       )}
 
+      <div className="row" role="group" aria-label="Patient detail view">
+        <button type="button" className={`btn grow ${view === 'overview' ? 'btn-primary' : 'btn-outline'}`} aria-pressed={view === 'overview'} onClick={() => setView('overview')}>Overview</button>
+        <button type="button" className={`btn grow ${view === 'timeline' ? 'btn-primary' : 'btn-outline'}`} aria-pressed={view === 'timeline'} onClick={() => setView('timeline')}>Timeline</button>
+      </div>
+      {view === 'timeline' && <PatientTimeline key={p.id} patient={p} nameOf={nameOf} />}
+      <div hidden={view !== 'overview'}>
+      <div className="stack">
       <section aria-labelledby="alerts-h" className="notes-card">
         <div className="notes-head">
           <h2 id="alerts-h"><Icon name="alert" />Special Notes{openAlerts.length > 0 ? ` · ${openAlerts.length} open` : ''}</h2>
@@ -285,6 +294,9 @@ export function PatientDetailPage() {
             Delete Patient Record
           </button>
         )}
+      </div>
+
+      </div>
       </div>
 
       {addingNote && (

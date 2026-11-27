@@ -1,10 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useToast } from '../../components/Toast'
-import { Field } from '../../components/ui'
-import { ROLES } from '../../lib/constants'
-import type { Role } from '../../lib/models'
-import { inviteUser } from '../patients/api'
+import { useToast } from '../../shared/components/Toast'
+import { Field } from '../../shared/components/ui'
+import { ROLES } from '../../domain/clinical/constants'
+import type { Role } from '../../domain/clinical/models'
+import { inviteUser } from '../../infrastructure/repositories/patients'
 
 export function InviteUserForm() {
   const qc = useQueryClient()
@@ -48,7 +48,7 @@ export function InviteUserForm() {
       </Field>
       <Field id="iu-role" label="Role" hint="They can sign in as soon as they set a password. No further approval is needed.">
         <select id="iu-role" className="input" value={role} onChange={(e) => setRole(e.target.value as Role)}>
-          {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+          {ROLES.map((r) => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
         </select>
       </Field>
       {error && <div className="error-box" role="alert">{error}</div>}

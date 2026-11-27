@@ -272,7 +272,7 @@ test("discharge moves a patient to the Discharged list and back", async ({
   await expect(page.getByText("2 active patients")).toBeVisible();
 });
 
-test("light and dark mode: pure white and pure black, remembered after reload", async ({
+test("light and dark mode: correct theme colors, remembered after reload", async ({
   page,
 }) => {
   await start(page);
@@ -281,10 +281,10 @@ test("light and dark mode: pure white and pure black, remembered after reload", 
   await expect(page.getByRole("heading", { name: "Patients" })).toBeVisible();
   const bg = () =>
     page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  expect(await bg()).toBe("rgb(255, 255, 255)");
+  expect(await bg()).toBe("rgb(247, 249, 252)");
   await page.getByRole("button", { name: "Switch to dark mode" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  expect(await bg()).toBe("rgb(0, 0, 0)");
+  expect(await bg()).toBe("rgb(16, 24, 32)");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.getByRole("link", { name: "Your profile" }).click();

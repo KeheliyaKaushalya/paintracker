@@ -1,5 +1,15 @@
-import { useState, useEffect, useId, useRef, type ReactNode } from "react";
+import { Children, cloneElement, isValidElement, useState, useEffect, useId, useRef, type ReactNode, type ReactElement, type InputHTMLAttributes, type ButtonHTMLAttributes } from "react";
 import { Icon } from "./Icon";
+
+/** Native button with safe default; submit buttons must opt in explicitly. */
+export function Button({ type = "button", ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return <button {...props} type={type} />;
+}
+
+/** Preserve caller styling and native search behaviour. */
+export function SearchInput(props: Omit<InputHTMLAttributes<HTMLInputElement>, "type">) {
+  return <input {...props} type="search" />;
+}
 
 export function Spinner({ label = "Loading" }: { label?: string }) {
   return <div className="spinner" role="status" aria-label={label} />;
@@ -59,11 +69,18 @@ export function Field({
   hint?: string;
   children: ReactNode;
 }) {
+  const controls = Children.map(children, (child) => {
+    if (!isValidElement(child) || typeof child.type !== "string" || !["input", "select", "textarea"].includes(child.type)) return child;
+    const control = child as ReactElement<InputHTMLAttributes<HTMLInputElement>>;
+    if (control.props.id && control.props.id !== id) return child;
+    const describedBy = [...new Set([...(control.props["aria-describedby"] ?? "").split(/\s+/).filter(Boolean), ...(error ? [`${id}-err`] : hint ? [`${id}-hint`] : [])])].join(" ");
+    return cloneElement(control, { id, "aria-invalid": error ? true : control.props["aria-invalid"], "aria-describedby": describedBy || undefined });
+  });
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
-      {children}
-      {hint && !error && <span className="hint">{hint}</span>}
+      {controls}
+      {hint && !error && <span id={`${id}-hint`} className="hint">{hint}</span>}
       {error && (
         <span className="field-error" id={`${id}-err`} role="alert">
           {error}
@@ -115,7 +132,7 @@ export function AlertBanner({
 }
 
 /** Keep keyboard focus inside the existing dialog and restore it on close. */
-function useDialogKeyboard(busy: boolean | undefined, onCancel: () => void) {
+export function useDialogKeyboard(busy: boolean | undefined, onCancel: () => void) {
   const ref = useRef<HTMLDivElement>(null);
   const latest = useRef({ busy, onCancel });
   useEffect(() => { latest.current = { busy, onCancel }; }, [busy, onCancel]);

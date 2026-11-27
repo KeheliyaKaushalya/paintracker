@@ -1,3 +1,4 @@
+import { SearchInput } from "../../../shared/components/ui";
 import { lazy, Suspense, useState, useRef, type ReactNode } from 'react'
 import type { PatientFull } from '../../../domain/clinical/models'
 import { todayISO, nowHHMM, hhmm, fmtDateLong } from '../../../domain/clinical/dates'
@@ -92,7 +93,7 @@ export function PatientTimeline({ patient: p, nameOf }: { patient: PatientFull; 
   return <section ref={host} className="patient-timeline stack" aria-labelledby="timeline-heading">
     <h2 id="timeline-heading" className="section-title">Patient timeline</h2>
     <div className="timeline-controls stack">
-      <label>Search events<input type="search" value={search} onChange={e => { setSearch(e.target.value); setLimit(20) }} /></label>
+      <label>Search events<SearchInput value={search} onChange={e => { setSearch(e.target.value); setLimit(20) }} /></label>
       <div className="timeline-dates"><label>From<input type="date" value={from} onChange={e => { setFrom(e.target.value); setLimit(20) }} /></label><label>To<input type="date" value={to} onChange={e => { setTo(e.target.value); setLimit(20) }} /></label></div>
       {from && to && from > to && <p role="alert">Start date must precede end date.</p>}
       <div className="row wrap"><button type="button" className="btn btn-outline btn-sm" onClick={() => { setSearch(''); setFrom(''); setTo(''); setFilter('All'); setLimit(20) }}>Clear filters</button><button type="button" className="btn btn-outline btn-sm" onClick={() => expand(true)}>Expand all</button><button type="button" className="btn btn-outline btn-sm" onClick={() => expand(false)}>Collapse all</button>{admin && <button type="button" className="btn btn-outline btn-sm" disabled={exporting || !page.length || changes.isPending || changes.isError || audit.isPending || audit.isError} onClick={() => void printTimeline()}>Print / Save PDF (shown events)</button>}</div>

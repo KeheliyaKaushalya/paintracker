@@ -1,3 +1,4 @@
+import { Button } from "../../shared/components/ui";
 import { useSubmission } from "../../shared/hooks/useSubmission";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
@@ -111,13 +112,13 @@ export function SetPasswordPage() {
                 {error}
               </div>
             )}
-            <button
+            <Button
               className="btn btn-primary btn-block"
               type="submit"
               disabled={busy || !password || !confirm}
             >
               {busy ? "Saving…" : "Save password"}
-            </button>
+            </Button>
           </>
         )}
       </form>

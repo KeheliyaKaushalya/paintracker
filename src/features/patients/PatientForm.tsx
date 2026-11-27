@@ -1,3 +1,4 @@
+import { Button } from "../../shared/components/ui";
 import { useSubmission } from "../../shared/hooks/useSubmission";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -714,9 +715,9 @@ export function PatientForm({
         </div>
       )}
       <div className="sticky-actions">
-        <button className="btn btn-primary grow" type="submit" disabled={busy}>
+        <Button className="btn btn-primary grow" type="submit" disabled={busy}>
           {busy ? "Saving…" : patientId ? "Save changes" : "Add patient"}
-        </button>
+        </Button>
       </div>
     </form>
   );

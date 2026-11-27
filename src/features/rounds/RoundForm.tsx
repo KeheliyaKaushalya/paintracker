@@ -1,3 +1,4 @@
+import { Button } from "../../shared/components/ui";
 import { useSubmission } from "../../shared/hooks/useSubmission";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
@@ -366,9 +367,9 @@ export function RoundForm({
       )}
 
       <div className="sticky-actions">
-        <button className="btn btn-primary grow" type="submit" disabled={busy}>
+        <Button className="btn btn-primary grow" type="submit" disabled={busy}>
           {busy ? "Saving…" : amend ? "Save correction" : "Save round"}
-        </button>
+        </Button>
       </div>
     </form>
   );

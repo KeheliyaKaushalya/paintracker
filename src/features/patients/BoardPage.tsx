@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
-import { Empty, ErrorBox, Spinner } from "../../shared/components/ui";
+import { SearchInput, Empty, ErrorBox, Spinner } from "../../shared/components/ui";
 import { Icon } from "../../shared/components/Icon";
 import { CATEGORIES } from "../../domain/clinical/constants";
 import {
@@ -96,11 +96,10 @@ export function BoardPage({
         >
           <Icon name="search" />
         </span>
-        <input
+        <SearchInput
           id="search"
           className="input"
           style={{ paddingLeft: 40 }}
-          type="search"
           placeholder="Search name or BHT"
           value={f.search}
           onChange={(e) => set({ search: e.target.value })}

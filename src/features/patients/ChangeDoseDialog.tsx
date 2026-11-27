@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Field } from "../../shared/components/ui";
+import { useSubmission } from "../../shared/hooks/useSubmission";
+import { Field, Button, useDialogKeyboard } from "../../shared/components/ui";
 import { MED_FREQS } from "../../domain/clinical/constants";
 import { medFreqLabel } from "../../domain/clinical/meds";
 import type { PatientMed } from "../../domain/clinical/models";
@@ -18,8 +19,10 @@ export function ChangeDoseDialog({
   const [freq, setFreq] = useState(med.freq ?? "");
   const [custom, setCustom] = useState(med.freq_custom ?? "");
   const [reason, setReason] = useState("");
-  const [busy, setBusy] = useState(false);
+  const { busy, begin, end } = useSubmission();
   const [error, setError] = useState<string | null>(null);
+
+  const dialogRef = useDialogKeyboard(busy, onClose);
 
   async function save() {
     setError(null);
@@ -35,21 +38,23 @@ export function ChangeDoseDialog({
       setError("Nothing has changed");
       return;
     }
-    setBusy(true);
+    if (!begin()) return;
     try {
       await changeMedDose(med.id, dose, freq, custom, reason);
       onDone();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save the change");
     } finally {
-      setBusy(false);
+      end();
     }
   }
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
+    <div className="dialog-backdrop" onClick={() => { if (!busy) onClose(); }}>
       <div
         className="dialog"
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cd-t"
@@ -111,16 +116,16 @@ export function ChangeDoseDialog({
           </div>
         )}
         <div className="row" style={{ justifyContent: "flex-end" }}>
-          <button className="btn btn-outline" onClick={onClose} disabled={busy}>
+          <Button className="btn btn-outline" onClick={onClose} disabled={busy}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             className="btn btn-primary"
             onClick={() => void save()}
             disabled={busy}
           >
             {busy ? "Saving…" : "Save change"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

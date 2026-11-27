@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Field } from "../../shared/components/ui";
+import { useSubmission } from "../../shared/hooks/useSubmission";
+import { Field, Button } from "../../shared/components/ui";
 import { MED_FREQS } from "../../domain/clinical/constants";
 import type { NewMed } from "../../infrastructure/repositories/patients";
 
@@ -25,7 +26,7 @@ export function AddMedForm({ onAdd }: { onAdd: (m: NewMed) => Promise<void> }) {
   const [freq, setFreq] = useState<string>(MED_FREQS[0]);
   const [custom, setCustom] = useState("");
   const [topup, setTopup] = useState("");
-  const [busy, setBusy] = useState(false);
+  const { busy, begin, end } = useSubmission();
   const [error, setError] = useState<string | null>(null);
 
   async function submit() {
@@ -43,7 +44,7 @@ export function AddMedForm({ onAdd }: { onAdd: (m: NewMed) => Promise<void> }) {
       setError("Enter the custom frequency");
       return;
     }
-    setBusy(true);
+    if (!begin()) return;
     try {
       await onAdd({
         drug,
@@ -60,7 +61,7 @@ export function AddMedForm({ onAdd }: { onAdd: (m: NewMed) => Promise<void> }) {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not add the medication");
     } finally {
-      setBusy(false);
+      end();
     }
   }
 
@@ -169,13 +170,13 @@ export function AddMedForm({ onAdd }: { onAdd: (m: NewMed) => Promise<void> }) {
           {error}
         </div>
       )}
-      <button
+      <Button
         className="btn btn-primary med-add-btn"
         onClick={() => void submit()}
         disabled={busy}
       >
         {busy ? "Adding…" : "Add to chart"}
-      </button>
+      </Button>
     </div>
   );
 }

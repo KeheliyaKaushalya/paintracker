@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Empty, ErrorBox, Spinner } from "../../shared/components/ui";
+import { SearchInput, Empty, ErrorBox, Spinner } from "../../shared/components/ui";
 import { useNameLookup, usePatients } from "./hooks";
 import { PatientCard } from "./PatientCard";
 
@@ -29,10 +29,9 @@ export function DischargedPage() {
         <label htmlFor="dsearch" className="sr-only">
           Search by name or BHT
         </label>
-        <input
+        <SearchInput
           id="dsearch"
           className="input"
-          type="search"
           placeholder="Search name or BHT"
           value={search}
           onChange={(e) => setSearch(e.target.value)}

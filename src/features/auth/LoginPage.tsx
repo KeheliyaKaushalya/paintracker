@@ -1,3 +1,4 @@
+import { Button } from "../../shared/components/ui";
 import { useSubmission } from "../../shared/hooks/useSubmission";
 import { useState, type FormEvent } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
@@ -96,13 +97,13 @@ export function LoginPage() {
             {error}
           </div>
         )}
-        <button
+        <Button
           className="btn btn-primary btn-block"
           type="submit"
           disabled={busy || !email || !password}
         >
           {busy ? "Signing in…" : "Sign in"}
-        </button>
+        </Button>
         <p className="faint">
           There is no sign-up. Ask an administrator to invite you.
         </p>

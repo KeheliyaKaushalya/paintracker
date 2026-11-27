@@ -155,6 +155,7 @@ describe("patient form", () => {
     bht: "TEST/1",
     age: "61",
     sex: "M",
+    ward: "7A",
   });
   it("accepts a minimal patient and trims", () => {
     const r = buildPatient(ok());
@@ -208,10 +209,22 @@ describe("patient form", () => {
       ]);
     }
   });
-  it("rejects an unknown drug", () => {
+  it("accepts a custom drug", () => {
     expect(
       buildPatient({ ...ok(), meds: [{ ...newMedRow(), drug: "Aspirin" }] }).ok,
+    ).toBe(true);
+  });
+  it("requires a ward and a custom medication name", () => {
+    expect(emptyPatientForm().ward).toBe("");
+    expect(buildPatient({ ...ok(), ward: "" }).ok).toBe(false);
+    expect(
+      buildPatient({ ...ok(), meds: [{ ...newMedRow(), drug: "Other" }] }).ok,
     ).toBe(false);
+    const r = buildPatient({
+      ...ok(),
+      meds: [{ ...newMedRow(), drug: "Other", drug_other: " Aspirin " }],
+    });
+    expect(r.ok && r.value.meds[0].drug).toBe("Aspirin");
   });
   it("accepts the Daily frequency", () => {
     const r = buildPatient({

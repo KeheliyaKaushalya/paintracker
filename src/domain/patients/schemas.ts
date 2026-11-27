@@ -3,7 +3,6 @@ import {
   ANAESTHESIA_MODES,
   CATEGORIES,
   MED_DOSINGS,
-  MED_DRUGS,
   MED_FREQS,
   MED_ROUTES,
   NERVE_TYPES,
@@ -18,6 +17,7 @@ import { isActiveMed } from "../clinical/meds";
 export interface MedFormRow {
   id: string;
   drug: string;
+  drug_other?: string;
   route: string;
   dose: string;
   freq: string;
@@ -67,6 +67,7 @@ export interface PatientFormValues {
 export const newMedRow = (): MedFormRow => ({
   id: crypto.randomUUID(),
   drug: "Paracetamol",
+  drug_other: "",
   route: "IV",
   dose: "",
   freq: "Every 6h",
@@ -81,7 +82,7 @@ export function emptyPatientForm(): PatientFormValues {
     age: "",
     sex: "",
     bht: "",
-    ward: "7A",
+    ward: "",
     category: "Surgery",
     category_note: "",
     pdph_level: "",
@@ -239,7 +240,7 @@ const patientSchema = z
 
 const medSchema = z.object({
   id: z.guid(),
-  drug: z.enum(MED_DRUGS),
+  drug: z.string().min(1, "Enter the drug name").max(200, "Drug name is too long"),
   route: z.enum(MED_ROUTES),
   dose: text(100),
   freq: z.enum(MED_FREQS).nullable(),
@@ -338,7 +339,7 @@ export function buildPatient(f: PatientFormValues): BuildResult<PatientBuild> {
   f.meds.forEach((m, i) => {
     const r = medSchema.safeParse({
       id: m.id,
-      drug: m.drug,
+      drug: (m.drug === "Other" && m.drug_other !== undefined ? m.drug_other : m.drug).trim(),
       route: m.route,
       dose: blank(m.dose),
       freq: m.freq || null,

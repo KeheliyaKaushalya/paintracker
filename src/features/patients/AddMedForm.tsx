@@ -32,8 +32,8 @@ export function AddMedForm({ onAdd }: { onAdd: (m: NewMed) => Promise<void> }) {
   async function submit() {
     setError(null);
     const drug = drugSel === "Other" ? drugOther.trim() : drugSel;
-    if (!drug) {
-      setError("Enter the drug name");
+    if (!drug || drug.length > 200) {
+      setError("Enter a drug name (maximum 200 characters)");
       return;
     }
     if (!dose.trim()) {

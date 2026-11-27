@@ -221,6 +221,7 @@ test("adding a patient with an epidural and a medication", async ({ page }) => {
   await expect(page.getByText("BHT number is required")).toBeVisible();
   await page.getByLabel("Full name").fill("Fresh Patient");
   await page.getByLabel("BHT number").fill("NEW/001");
+  await page.getByLabel("Ward", { exact: true }).fill("7A");
   await page.getByLabel("Age").fill("55");
   await page.locator("summary", { hasText: "Pain management" }).click();
   await page.getByRole("button", { name: "Epidural" }).click();
@@ -248,6 +249,7 @@ test("a duplicate BHT is explained in plain words", async ({ page }) => {
   await page.getByRole("link", { name: "Add patient" }).click();
   await page.getByLabel("Full name").fill("Someone");
   await page.getByLabel("BHT number").fill("DEMO/0001");
+  await page.getByLabel("Ward", { exact: true }).fill("7A");
   await page.getByRole("button", { name: "Add patient" }).click();
   await expect(
     page.getByText("A patient with that BHT number already exists."),

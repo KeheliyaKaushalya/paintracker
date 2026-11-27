@@ -31,7 +31,8 @@ export function filterPatients(
     if (
       q &&
       !p.full_name.toLowerCase().includes(q) &&
-      !p.bht.toLowerCase().includes(q)
+      !p.bht.toLowerCase().includes(q) &&
+      !(p.category === "Other" && (p.category_note ?? "").toLowerCase().includes(q))
     )
       return false;
     if (f.from && (!p.surgery_date || p.surgery_date < f.from)) return false;

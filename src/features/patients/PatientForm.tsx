@@ -1,7 +1,7 @@
 import { Button } from "../../shared/components/ui";
 import { useSubmission } from "../../shared/hooks/useSubmission";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "../../shared/components/Icon";
 import { useToast } from "../../shared/components/Toast";
@@ -55,6 +55,11 @@ export function PatientForm({
   const wardNames = wardsQ.data
     ? wardsQ.data.filter((w) => w.active).map((w) => w.name)
     : [...WARDS_DEFAULT];
+  useEffect(() => {
+    const active = wardsQ.data?.filter((w) => w.active) ?? [];
+    if (!patientId && active.length === 1)
+      setF((cur) => cur.ward ? cur : { ...cur, ward: active[0].name });
+  }, [patientId, wardsQ.data]);
   const set = <K extends keyof PatientFormValues>(
     k: K,
     v: PatientFormValues[K],
@@ -71,6 +76,11 @@ export function PatientForm({
     e.preventDefault();
     setFormError(null);
     const built = buildPatient(f);
+    if (f.category === "Other" && !f.category_note.trim() && !(patientId && initial.category === "Other" && !initial.category_note.trim())) {
+      setErrors({ ...(!built.ok ? built.errors : {}), category_note: "Enter the patient category" });
+      setFormError("Enter the patient category and try again.");
+      return;
+    }
     if (!built.ok) {
       setErrors(built.errors);
       setFormError(
@@ -176,6 +186,7 @@ export function PatientForm({
             id="ward"
             className="input"
             list="wards"
+            placeholder="Select or enter ward"
             autoComplete="off"
             aria-invalid={bad("ward")}
             value={f.ward}
@@ -199,7 +210,7 @@ export function PatientForm({
         {(NOTE_CATEGORIES as readonly string[]).includes(f.category) && (
           <Field
             id="category_note"
-            label="Details"
+            label={f.category === "Other" ? "Specify patient category" : "Details"}
             error={err("category_note")}
           >
             <textarea
@@ -581,7 +592,7 @@ export function PatientForm({
                     label="Drug"
                     value={m.drug}
                     options={MED_DRUGS}
-                    onChange={(v) => setMed(m.id, { drug: v })}
+                    onChange={(v) => setMed(m.id, { drug: v, drug_other: "" })}
                   />
                   <Select
                     id={`r${m.id}`}
@@ -591,6 +602,13 @@ export function PatientForm({
                     onChange={(v) => setMed(m.id, { route: v })}
                   />
                 </div>
+                {m.drug === "Other" && (
+                  <Field id={`other${m.id}`} label="Medication name">
+                    <input id={`other${m.id}`} className="input" autoComplete="off"
+                      value={m.drug_other ?? ""}
+                      onChange={(e) => setMed(m.id, { drug_other: e.target.value })} />
+                  </Field>
+                )}
                 <div className="row2">
                   <Field id={`o${m.id}`} label="Dose">
                     <input

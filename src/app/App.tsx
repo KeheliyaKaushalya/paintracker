@@ -5,10 +5,19 @@ import { Empty, Spinner } from "../shared/components/ui";
 import { LoginPage } from "../features/auth/LoginPage";
 import { RequireAdmin, RequireAuth } from "../features/auth/RequireAuth";
 import { BoardPage } from "../features/patients/BoardPage";
-import { DischargedPage } from "../features/patients/DischargedPage";
-import { PatientDetailPage } from "../features/patients/PatientDetailPage";
 import { configError } from "../infrastructure/supabase/supabase";
 import { SetPasswordPage } from "../features/auth/SetPasswordPage";
+const DischargedPage = lazy(() =>
+  import("../features/patients/DischargedPage").then((m) => ({
+    default: m.DischargedPage,
+  })),
+);
+
+const PatientDetailPage = lazy(() =>
+  import("../features/patients/PatientDetailPage").then((m) => ({
+    default: m.PatientDetailPage,
+  })),
+);
 
 // Screens used less often load only when opened, so the first screen appears faster on a phone.
 const TeamPage = lazy(() =>
